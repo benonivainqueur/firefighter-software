@@ -1,0 +1,30 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 33
+
+    defaultConfig {
+        minSdkVersion 26
+        targetSdkVersion 33
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    namespace 'com.tapwithus.tapunity'
+
+}
+
+dependencies {
+//    compile fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
+//    implementation 'com.tapwithus:tap-android-sdk:0.1.12'
+    implementation 'androidx.annotation:annotation:1.5.0'
+    implementation project(':tap-android-sdk')
+    compileOnly files('unityLibs/classes.jar')
+}
