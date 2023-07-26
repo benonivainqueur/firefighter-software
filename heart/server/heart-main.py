@@ -5,7 +5,7 @@ import pathlib
 from websockets import serve
 
 data_location = pathlib.Path(__file__).parent.resolve() / "heart_data"  # change per setup ?
-input_filename = data_location + input("Name log file: ") + '.log'
+input_filename = data_location / (input("Name log file: ") + '.log')
 logging.basicConfig(filename=input_filename, filemode='a+', format='%(created)f|%(message)s', level=logging.INFO)
 logger = logging.getLogger('main')
 CURRENT_ACTION = False

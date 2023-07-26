@@ -48,7 +48,6 @@ estimated_max_heart_rate = 192 - (0.007*(wearer_age**2))
 estimated_resting_heart_rate = 70
 
 all_recorded_actions: List[ActionData] = []
-currently_in_action = False
 current_action: ActionData = None
 with open(log_filename, 'r') as log_file:
     for line in log_file.readlines():
@@ -58,13 +57,15 @@ with open(log_filename, 'r') as log_file:
                 if current_action is not None:
                     print(f"ISSUE WITH ACTION AT {current_action.start_time} AND NEW ACTION AT {timestamp}")
                 current_action = ActionData(float(timestamp))
-            elif data == "STOP":
+            elif data == "END":
                 if current_action is None:
                     print(f"ISSUE WITH STOP CALL AT {timestamp}, NO ACTION BEFORE")
                 current_action.end_time = float(timestamp)
                 all_recorded_actions.append(current_action)
                 current_action = None
-            if data.isdecimal() and current_action is not None:
+            if (data.isdecimal() or data.startswith("a+")) and current_action is not None:
+                if data.startswith("a+"):
+                    data = data.replace("a+", "")
                 percent_max_heart_rate = int(data) / (estimated_max_heart_rate - wearer_age)
                 current_action.heart_rate_measurements[int(data)] += 1
                 current_action.heart_rate_perc_measurements[percent_max_heart_rate] += 1
@@ -74,7 +75,7 @@ heart_rate_ranges = [0, .50, .70, .85, 1]
 heart_rate_range_keys = [f'{low}-{high}' for low, high in zip(heart_rate_ranges[:-1], heart_rate_ranges[1:])]
 
 
-parsed_log_file = log_filename.replace(".log", ".plog")
+parsed_log_file = str(log_filename).replace(".log", ".plog")
 with open(parsed_log_file, 'w+') as parsed_log:
     for action in all_recorded_actions:
         action_name = input("Please name the action starting at {:.4f} and lasting {:.2f}s -> ".format(action.start_time, action.duration))
