@@ -14,6 +14,7 @@ from bleak import _logger as logger
 from tools import feature_extraction, table, merge_packets
 from tapsdk.models import AirGestures
 from tapsdk import TapSDK, TapInputMode
+
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 # signal handler function called when SIGINT is received
 
@@ -21,6 +22,8 @@ def signal_handler(sig, frame):
     global is_recording
     is_recording = False
 signal.signal(signal.SIGINT, signal_handler)
+# setup signal handler for SIGINT (ctrl+c)
+
 
 
 global is_recording
@@ -33,20 +36,21 @@ counter = 0
 timestamped_imu_values = []
 timestamped_accel_values = []
 merged_values = []
+global first_iteration
+first_iteration = True
+global base_path
+base_path = './firefighter-software/tapstrap_new/training_data/data_2'
 
 def OnRawData(identifier, packets):
     if is_recording:
-        # number of imu packets 
-        # print(packets)
-        # print("single packet: ", packets)
-        number_of_msg_in_packet = len(packets)
-        print("number_of_msg_in_packet", number_of_msg_in_packet)
+        # number_of_msg_in_packet = len(packets)
+        # print("number_of_msg_in_packet", number_of_msg_in_packet)
         averaged_packet = merge_packets(packets, prexisting=False, remove_label=False, collecting_data=True)
         for p in averaged_packet:
             merged_values.append([p["ts"], p["payload"]])
+            OnRawData.merge_cnt += 1
         # merged_values.append([for packet in interpolated_packets[packet["ts"], packet["payload"]]])
         for m in packets:
-            OnRawData.cnt += 1
             if m["type"] == "imu":
                     timestamped_imu_values.append([m["ts"], m["payload"]])
                     OnRawData.imu_cnt += 1
@@ -57,137 +61,159 @@ def OnRawData(identifier, packets):
 
 OnRawData.imu_cnt = 0
 OnRawData.accel_cnt = 0
-OnRawData.cnt = 0
+OnRawData.merge_cnt = 0
+
+# gesture list 
+# label_tuples = [('turn', 1), ('still',0), ('lever',2)]
+label_tuples = {'turn': 1, 'still':0 , 'lever':2}
+# add a new entry to the dictionary
+first_iteration = True
+
+def get_next_folder_num(gesture_name):
+    folder_name_pattern = '{gesture_name}(\d+)'.format(gesture_name=gesture_name)
+    print("gesture_name", gesture_name)
+    print("folder_count", folder_count)
+    if folder_count[gesture_name] == -1 or first_iteration or gesture_name not in folder_count.keys(): 
+        existing_folders = [folder for folder in os.listdir(base_path) if re.match(folder_name_pattern, folder)]
+        if (len(existing_folders) == 0):
+             folder_count[gesture_name]  = folder_count[gesture_name] + 1
+             return folder_count[gesture_name]
+        else :
+            existing_numbers = [int(re.search(folder_name_pattern, folder).group(1)) for folder in existing_folders]
+            folder_count[gesture_name] = max(existing_numbers) + 1
+            return folder_count[gesture_name]
+    else : 
+        # add new entry to the dictionary
+        folder_count[gesture_name]  += 1
+        return folder_count[gesture_name]
+    
+ 
+
+def file_writer(file_path, data, label):
+    with open(file_path, 'w') as f:
+        for values in data:
+            # throwing error here
+            json.dump({'timestamp':  values[0], 'payload':  values[1], 'label': int(label)}, f)
+            f.write('\n')
+
+def get_folder_label(folder_name):
+    # open the json file and get the label
+    folder_path = os.path.join(base_path, folder_name)
+    # print("folder_path", folder_path)
+    # open json file
+    with open(os.path.join(folder_path, 'imu_data.json'), 'r') as f:
+        imu_data = [json.loads(line) for line in f]
+    imu_df = pd.DataFrame(imu_data)
+    label = imu_df['label'].iloc[0]
+    return label 
+
+# set folder_tuples
+def set_folder_tuples(existing_folders, passed_folder_count):
+    for folder in existing_folders:
+        if folder not in label_tuples.keys():
+            label = get_folder_label(folder+ "0")
+            label_tuples[folder] = label
+            folder_count[folder] = passed_folder_count[folder]
+            print("folder_count[{folder}]".format(folder=folder), folder_count[folder])
+            # folder_count[folder] = folder_num
+
 
 def record_data():
     global is_recording
+    global folder_count 
+    existing_folders = [folder for folder in os.listdir(base_path)]
+    # remove numbers from each folder name
+    existing_folders = [re.sub(r'\d+', '', folder) for folder in existing_folders]
+    # for each unique folder name, get the number of folders with that name
+    # folder_count = {'turn': -1, 'still':-1 , 'lever':-1}
+    folder_count = {folder: existing_folders.count(folder) for folder in existing_folders}
+    print ("folder_count", folder_count)
+    existing_folders = list(set(existing_folders))# remove duplicates
+    set_folder_tuples(existing_folders, folder_count)
+    print("set folder tuples", label_tuples)
+    # if len(existing_folders) == 0:
+    #     print("No existing folders")
+    # else:
+    #     print("existing_folders", existing_folders)
+    #     print("folder_count", folder_count)
+    # for folder in existing_folders:
+    #     if folder in folder_count.keys():
+    #         folder_count[folder] = -1
+    print("existing_folders", existing_folders)
     while True:
-        gesture_name = input("Enter the name of the gesture (or 'quit' to quit): ")
+        # if (not automate_collection):
+        # gesture_name = input("Enter the name of the gesture (or 'quit' to quit): ").lower()
+        gesture_name = 'turn'
+        is_recording = True
+        
         # gesture_name = 'Turn'
         if gesture_name.lower() == 'quit':
             # is_recording = False
             print("Quitting...")
+            # kill the current thread
             # exit the program
-            sys.exit(0)
-            exit()
-            break
+            # kill the asyncio loop
+            return 
         else:
             global timestamped_imu_values
             global timestamped_accel_values
-
+            global merged_values
             timestamped_imu_values = []
             timestamped_accel_values = []
-
+            merged_values = []
+            OnRawData.imu_cnt = 0
+            OnRawData.accel_cnt = 0
+            OnRawData.merge_cnt = 0
             is_recording = True
+            # wait for 3 seconds before starting the recording
+            # time.sleep(3) # this is a alternate way to 
+            # make a time counter that will count down from 3 to 0
+            #
+            # sleep_time = 10
             print("Start recording, press ctrl+c to stop recording...")
-            while is_recording:
-                # print a message very 5 iterations 
-                if OnRawData.imu_cnt % 5 == 0:
-                    print("Recording...", OnRawData.imu_cnt)
-                time.sleep(0.1)
-            # if the owrd turn is in the gesture name, then set the label to 1
-            if gesture_name.lower().find('turn') != -1:
-                label = 1
-
-            if gesture_name.lower().find('still') != -1:
-                label = 0
+            # while sleep_time > 0:
+            #     print("interpolated count atm: {0}".format(OnRawData.merge_cnt))
+            #     sleep_time -= 1
+            #     time.sleep(0.1)
+            while (OnRawData.merge_cnt < 150):
+                pass
             
-            if gesture_name.lower().find('lever') != -1:
-                label = 2
-
-            base_path = './interpolated_data'
-            # TODO - Refactor this into a function
-            if gesture_name.lower().find('turn') != -1:
-                # Find the highest numbered folder with the name containing "Turn"
-                folder_name_pattern = r'Turn(\d+)'
-                existing_folders = [folder for folder in os.listdir(base_path) if re.match(folder_name_pattern, folder)]
-                if existing_folders:
-                    # Get the highest number from the existing folders
-                    existing_numbers = [int(re.search(folder_name_pattern, folder).group(1)) for folder in existing_folders]
-                    highest_number = max(existing_numbers)
-                    next_number = highest_number + 1
-                else:
-                    next_number = 1
-
-                # Create the new folder with the incremented number
-                folder_name = f'Turn{next_number}'
-
-            elif gesture_name.lower().find('still') != -1:
-                # Find the highest numbered folder with the name containing "Turn"
-                folder_name_pattern = r'Still(\d+)'
-                existing_folders = [folder for folder in os.listdir(base_path) if re.match(folder_name_pattern, folder)]
-                if existing_folders:
-                    # Get the highest number from the existing folders
-                    existing_numbers = [int(re.search(folder_name_pattern, folder).group(1)) for folder in existing_folders]
-                    highest_number = max(existing_numbers)
-                    next_number = highest_number + 1
-                else:
-                    next_number = 1
-
-                # Create the new folder with the incremented number
-                folder_name = f'Still{next_number}'
-            elif gesture_name.lower().find('lever') != -1:
-                # Find the highest numbered folder with the name containing "Turn"
-                folder_name_pattern = r'lever(\d+)'
-                existing_folders = [folder for folder in os.listdir(base_path) if re.match(folder_name_pattern, folder)]
-                if existing_folders:
-                    # Get the highest number from the existing folders
-                    existing_numbers = [int(re.search(folder_name_pattern, folder).group(1)) for folder in existing_folders]
-                    highest_number = max(existing_numbers)
-                    next_number = highest_number + 1
-                else:
-                    next_number = 1
-
-                # Create the new folder with the incremented number
-                folder_name = f'lever{next_number}'
-            else:
-                folder_name = gesture_name
+            # while is_recording:
+            #     # print a message very 5 iterations 
+            #     if OnRawData.imu_cnt % 5 == 0:
+            #         print("Recording...", OnRawData.imu_cnt)
+            #     time.sleep(0.1)
+            # if the owrd turn is in the gesture name, then set the label to 1
+            # label = label_tuples[gesture_name.lower()]
+            # base_path = './interpolated_data'
+            if gesture_name not in folder_count.keys():
+                print("adding a new gesture", gesture_name)
+                # add new entry to the dictionary
+                folder_count[gesture_name] = -1 
+                label_tuples[gesture_name] = len(label_tuples.keys())
+                
+            next_folder_num = get_next_folder_num(gesture_name)
+            folder_name = f'{gesture_name}{next_folder_num}'
+            folder_count[gesture_name] = next_folder_num
+            label = label_tuples[gesture_name]
 
             folder_path = os.path.join(base_path, folder_name)
-            os.makedirs(folder_path, exist_ok=True)
-            imu_file_path = os.path.join(folder_path, 'thumb_imu_data.json')
-            accel_file_path = os.path.join(folder_path, 'fingers_accel_data.json')           
+            os.makedirs(folder_path, exist_ok=False)
+            imu_file_path = os.path.join(folder_path, 'imu_data.json')
+            accel_file_path = os.path.join(folder_path, 'accel_data.json')  
+            interpolation_file_path = os.path.join(folder_path, 'merged_data.json')  
 
-            # Save recorded data
-          
-            # os.makedirs(f'{base_path}/{gesture_name}', exist_ok=True)
-            # imu_file_path = f'{base_path}/{gesture_name}/imu_data.json'
-            # accel_file_path = f'{base_path}/{gesture_name}/accel_data.json'
-
-            # Save recorded data
-
-            # interpolate the timestamped_imu_values and timestamped accel valuess
-
-            # TODO: Refactor this into a function
-            with open(imu_file_path, 'w') as f:
-                for imu_data in timestamped_imu_values:
-                    json.dump({'timestamp':  imu_data[0], 'payload':  imu_data[1], 'label': label}, f)
-                    f.write('\n')
-                # json.dump(timestamped_imu_values, f)
-            with open(accel_file_path, 'w') as f:
-                for accel_data in timestamped_accel_values:
-                # json.dump(timestamped_accel_values, f)
-                    json.dump({'timestamp':  accel_data[0], 'payload':  accel_data[1], 'label': label}, f)
-                    f.write('\n')
-
-            interpolation_file_path = os.path.join(folder_path, 'interpolated_data.json')  
-            with open(interpolation_file_path, 'w') as f:
-                for interpolated in merged_values:
-                # json.dump(timestamped_accel_values, f)
-                    json.dump({'timestamp':  interpolated[0], 'payload':  interpolated[1], 'label': label}, f)
-                    f.write('\n')         
-
-            # interpolate_and_save(imu_file_path, accel_file_path, interpolation_file_path,label )
-
-            print(f"Data saved to {imu_file_path} and {accel_file_path}")
-            print("# IMU packets recieved: ", OnRawData.imu_cnt)
+            file_writer(imu_file_path, timestamped_imu_values, label)
+            file_writer(accel_file_path, timestamped_accel_values, label)
+            file_writer(interpolation_file_path, merged_values, label)
+       
+            print(f"Data saved to {imu_file_path} and {accel_file_path} and {interpolation_file_path}")
+            # print("# IMU packets recieved: ", len(timestamped_imu_values)))
             print("# IMU Entries", len(timestamped_imu_values))
-            print("# Accel packets recieved: ", OnRawData.accel_cnt)
+            # print("# Accel packets recieved: ", OnRawData.accel_cnt)
             print("# Aceel Entries", len(timestamped_accel_values))
-            print("# interpolated packets recieved: ", OnRawData.accel_cnt)
+            # print("# interpolated packets recieved: ", OnRawData.accel_cnt)
             print("# interpolated Entries", len(merged_values))
-
-
 
 def interpolate_and_save(imu_file_path, accel_file_path, output_file_path, label):
     # Load IMU data
@@ -227,7 +253,6 @@ def interpolate_and_save(imu_file_path, accel_file_path, output_file_path, label
             json.dump(output_data, f)
             f.write('\n')
 
-
 async def run(loop, debug=False):
     if debug:
         import sys
@@ -256,12 +281,25 @@ async def run(loop, debug=False):
     await client.send_vibration_sequence([300,100,300])
     #wait for three seconds
    
-    import time
     # do not start the record_thread for three seconds
     # time.sleep(3)
+    global record_thread 
     record_thread = threading.Thread(target=record_data)
+    # end the thread 
+    
+    # when record_data returns, end the program
+    # end_program = threading.Thread(target=exit) # this u
     record_thread.start()
-    await asyncio.sleep(1000.0, True) 
+    # break the asyncio loop when the thread is joined 
+    # asyncio.run(loop)
+    while True:
+        if not record_thread.is_alive():
+            break
+        await asyncio.sleep(0.1)
+    # await asyncio.sleep(1000.0) # this line  is to keep the program running for 50 seconds
+    # await asyncio.gather(loop)
+    record_thread.join()
+
     # after the 100 seconds, print a message saying that the program is done
     print("\nCommunication with TapStrap Closed. ")
     # open_channel = False
@@ -270,7 +308,7 @@ async def run(loop, debug=False):
 
     # await asyncio.sleep(10.0, True) # this line  is to keep the program running for 50 seconds
 
-
 if __name__ == "__main__":
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(loop, True))

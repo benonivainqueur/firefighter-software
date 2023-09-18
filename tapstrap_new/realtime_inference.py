@@ -20,7 +20,7 @@ from scipy.signal import find_peaks
 from tabulate import tabulate
 import time
 from tools import feature_extraction, table
-from tapstrap_gesture_recorder import average_and_create_payload
+# from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap_interpolated import merge_packets
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 
@@ -96,7 +96,7 @@ def reset_arrays():
     extraction process and then inference. 
 '''
 def on_raw_data(identifier, packets):
-    if  (on_raw_data.accel_cnt >= polling_window or on_raw_data.imu_cnt >= polling_window or on_raw_data.interpol_cnt >= polling_window):
+    if  (on_raw_data.interpol_cnt >= polling_window or on_raw_data.accel_cnt >= polling_window or on_raw_data.imu_cnt >= polling_window ):
         # print("performing inference")
         if use_thumb:
             new_df = process_interpolated_data(timestamped_interpolated_values)
@@ -129,12 +129,7 @@ def on_raw_data(identifier, packets):
                     timestamped_accel_values.append(m["payload"])
                     on_raw_data.accel_cnt += 1
 
-'''
-    This function is called when the tap is connected
-    Also, this function is called when the tap is disconnected
-    
-    When the tap is connected, we will set the input mode to raw
-'''
+
 async def run(loop, debug=False):
     print("beginning run looop")
     if debug:
@@ -170,7 +165,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 150 # how many readings we need to perform feature extraction and inference
+polling_window = 200 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
