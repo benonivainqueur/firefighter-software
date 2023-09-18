@@ -1,76 +1,38 @@
-import os
 import time
 import json
 import threading
 import signal
 import asyncio
 import logging
-import os
-import signal
 import time
-import json
-
-from tapsdk import TapSDK, TapInputMode
-from tapsdk.models import AirGestures
-
 import os
-os.environ["PYTHONASYNCIODEBUG"] = str(1)
-import asyncio
+import re
 import platform
-import logging
-from bleak import _logger as logger
 import sys
-import json
-global is_recording
-is_recording = False
-
-label= 1 # this label will signify the gesture that is being recorded
-
+import pandas as pd
+from bleak import _logger as logger
+from tools import feature_extraction, table, merge_packets
+from tapsdk.models import AirGestures
+from tapsdk import TapSDK, TapInputMode
+os.environ["PYTHONASYNCIODEBUG"] = str(1)
 # signal handler function called when SIGINT is received
+
 def signal_handler(sig, frame):
     global is_recording
     is_recording = False
-
-# Set signal handler for SIGINT (ctrl+c)
 signal.signal(signal.SIGINT, signal_handler)
-counter = 0
-# Flag to control recording
-# is_recording = True
 
+
+global is_recording
+# Flag to control recording
+is_recording = False
+label= 1 # this label will signify the gesture that is being recorded
+# Set signal handler for SIGINT (ctrl+c)
+counter = 0
 # Lists to store data
 timestamped_imu_values = []
 timestamped_accel_values = []
-timestamped_interpolated_values = []
-
-# Create a list to store the interpolated values
-
-def average_and_create_payload(packets):
-    imu_packets = [packet for packet in packets if packet["type"] == "imu"]
-    accl_packets = [packet for packet in packets if packet["type"] == "accl"]
-
-    # Calculate the average timestamp
-    avg_timestamp = round(sum(packet["ts"] for packet in packets) / len(packets), 4)
-
-    # Calculate the average payload for imu packets
-    num_imu_values = len(imu_packets[0]["payload"]) if imu_packets else 0
-    avg_imu_payload = [round(sum(packet["payload"][i] for packet in imu_packets) / len(imu_packets)) for i in range(num_imu_values)]
-
-    # Calculate the average payload for accl packets
-    num_accl_values = len(accl_packets[0]["payload"]) if accl_packets else 0
-    avg_accl_payload = [round(sum(packet["payload"][i] for packet in accl_packets) / len(accl_packets)) for i in range(num_accl_values)]
-
-    # Create the singular payload containing imu payload followed by accl payload
-    singular_payload = avg_imu_payload + avg_accl_payload
-
-    # Create and return the result as a single packet
-    result_packet = {
-        # "type": "interpolated",
-        "ts": avg_timestamp,
-        "payload": singular_payload
-    }
-
-    return result_packet
-
+merged_values = []
 
 def OnRawData(identifier, packets):
     if is_recording:
@@ -78,44 +40,25 @@ def OnRawData(identifier, packets):
         # print(packets)
         # print("single packet: ", packets)
         number_of_msg_in_packet = len(packets)
-        print("number_of_masg_in_packet", number_of_msg_in_packet)
-        print(average_and_create_payload(packets))
-        averaged_packet = average_and_create_payload(packets)
-        timestamped_interpolated_values.append([averaged_packet["ts"], averaged_packet["payload"]])
-        # print(interpolated_packet)
-        # timestamped_interpolated_values.append([for packet in interpolated_packets[packet["ts"], packet["payload"]]])
+        print("number_of_msg_in_packet", number_of_msg_in_packet)
+        averaged_packet = merge_packets(packets, prexisting=False, remove_label=False, collecting_data=True)
+        for p in averaged_packet:
+            merged_values.append([p["ts"], p["payload"]])
+        # merged_values.append([for packet in interpolated_packets[packet["ts"], packet["payload"]]])
         for m in packets:
             OnRawData.cnt += 1
-            
             if m["type"] == "imu":
-                # record only every 5th imu packet
-                # if OnRawData.cnt % 5 == 0:
-                    # timestamped_imu_values.append([time.time(), m["payload"]])
                     timestamped_imu_values.append([m["ts"], m["payload"]])
-
-                    # interpolated_packets.append(m["payload"])
                     OnRawData.imu_cnt += 1
             if m["type"] == "accl":
-                #  if(OnRawData.cnt % 5 == 0):
                     timestamped_accel_values.append([m["ts"], m["payload"]])
                     OnRawData.accel_cnt += 1
-                    # interpolated_packets.append(m["payload"])
-            # if m["type"] == "accl" or m["type"] == "imu":
-                #  if(OnRawData.cnt % 5 == 0):
-                    # timestamped_accel_values.append([time.time(), m["payload"]])
-                    # OnRawData.accel_cnt += 1
-                    # interpolated_packets.append(m["payload"])
-
-                # interpolated_values.append([time.time(), interpolated_packets])
-            # print("interpolated packet: " ,interpolated_packets)
-from bisect import bisect_left
-
+           
 
 OnRawData.imu_cnt = 0
 OnRawData.accel_cnt = 0
 OnRawData.cnt = 0
-import os
-import re
+
 def record_data():
     global is_recording
     while True:
@@ -153,7 +96,7 @@ def record_data():
                 label = 2
 
             base_path = './interpolated_data'
-
+            # TODO - Refactor this into a function
             if gesture_name.lower().find('turn') != -1:
                 # Find the highest numbered folder with the name containing "Turn"
                 folder_name_pattern = r'Turn(\d+)'
@@ -215,7 +158,7 @@ def record_data():
 
             # interpolate the timestamped_imu_values and timestamped accel valuess
 
-
+            # TODO: Refactor this into a function
             with open(imu_file_path, 'w') as f:
                 for imu_data in timestamped_imu_values:
                     json.dump({'timestamp':  imu_data[0], 'payload':  imu_data[1], 'label': label}, f)
@@ -229,7 +172,7 @@ def record_data():
 
             interpolation_file_path = os.path.join(folder_path, 'interpolated_data.json')  
             with open(interpolation_file_path, 'w') as f:
-                for interpolated in timestamped_interpolated_values:
+                for interpolated in merged_values:
                 # json.dump(timestamped_accel_values, f)
                     json.dump({'timestamp':  interpolated[0], 'payload':  interpolated[1], 'label': label}, f)
                     f.write('\n')         
@@ -242,10 +185,9 @@ def record_data():
             print("# Accel packets recieved: ", OnRawData.accel_cnt)
             print("# Aceel Entries", len(timestamped_accel_values))
             print("# interpolated packets recieved: ", OnRawData.accel_cnt)
-            print("# interpolated Entries", len(timestamped_interpolated_values))
+            print("# interpolated Entries", len(merged_values))
 
-import pandas as pd
-import json
+
 
 def interpolate_and_save(imu_file_path, accel_file_path, output_file_path, label):
     # Load IMU data

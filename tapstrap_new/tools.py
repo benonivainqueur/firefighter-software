@@ -119,81 +119,6 @@ def feature_extraction(new_dataframe, use_label, interpolated = False):
     # print('SHAPE:', data_df.shape)
     return data_df
 
-
-
-
-def final_feature_extraction_with_interpolation(new_dataframe, use_label):
-    # List of columns from interpolation
-    imu_features = ['thumb_imu_x', 'thumb_imu_y', 'thumb_imu_z', 'thumb_imu_pitch', 'thumb_imu_yaw', 'thumb_imu_roll']
-
-    features = imu_features +  ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
-                'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z'] 
-
-
-    fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-
-    # Average acceleration per axis
-    avg_accel = new_dataframe[features].mean()
-
-    # Calculate the average jerk per axis
-    avg_jerk = new_dataframe[features].diff().mean()
-
-    # Standard deviation per axis
-    std_dev_accel = new_dataframe[features].std()
-
-    # Average absolute difference per axis
-    avg_abs_diff_accel = new_dataframe[features].diff().abs().mean()
-
-    # Initialize dictionary to hold results
-    avg_accel_mag = {}
-    # Loop over each finger and calculate the average acceleration magnitude
-    for finger in fingers:
-        avg_accel_mag[finger] = ((new_dataframe[[f'{finger}_x', f'{finger}_y', f'{finger}_z']] ** 2).sum(axis=1) ** 0.5).mean()
-
-    # Time between peaks per axis
-    time_between_peaks = {}
-    for feature in features:
-        peaks, _ = find_peaks(new_dataframe[feature])
-        # check that there are peaks
-        if len(peaks) > 0:
-
-            time_between_peaks[feature] = np.diff(peaks).mean()
-
-    # Calculate the average for IMU features
-    avg_imu_features = new_dataframe[imu_features].mean()
-
-    # Rename each key to be avg_accel_mag_{finger}
-    avg_accel_dict = {f'avg_accel_{k}': v for k, v in avg_accel.items()}
-    std_dev_accel_dict = {f'std_dev_accel_{k}': v for k, v in std_dev_accel.items()}
-    avg_abs_diff_accel_dict = {f'avg_abs_diff_accel_{k}': v for k, v in avg_abs_diff_accel.items()}
-    time_between_peaks_dict = {f'time_between_peaks_{k}': v for k, v in time_between_peaks.items()}
-    avg_accel_mag_dict = {f'avg_accel_mag_{k}': v for k, v in avg_accel_mag.items()}
-    
-   
-    avg_jerk_dict = {f'avg_jerk_{k}': v for k, v in avg_jerk.items()}
-    avg_imu_features_dict = {f'avg_{k}': v for k, v in avg_imu_features.items()}
-
-    # Convert dictionaries to DataFrames
-    avg_accel_df = pd.DataFrame(avg_accel_dict, index=[0])
-    std_dev_accel_df = pd.DataFrame(std_dev_accel_dict, index=[0])
-    avg_abs_diff_accel_df = pd.DataFrame(avg_abs_diff_accel_dict, index=[0])
-    time_between_peaks_df = pd.DataFrame(time_between_peaks_dict, index=[0])
-    avg_accel_mag_df = pd.DataFrame(avg_accel_mag_dict, index=[0])
-    avg_jerk_df = pd.DataFrame(avg_jerk_dict, index=[0])
-    avg_imu_features_df = pd.DataFrame(avg_imu_features_dict, index=[0])
-    
-
-
-    # Concatenate DataFrames
-    data_df = pd.concat([avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df, avg_imu_features_df], axis=1)
-    
-    if use_label:
-        data_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
-
-    return data_df
-
-
-
 '''
     this function will use tabulate to print out a table
     input: dataframe
@@ -203,8 +128,6 @@ def table(t) :
     table = tabulate(t, headers='keys', tablefmt='fancy_grid')
     print(table)
 
-
-
 '''
     This function will take in a list of packets, and merge them together.
     The way it is being merged is by taking the closest imu packet to the accl packet, and merging them.
@@ -212,7 +135,7 @@ def table(t) :
     input: list of packets
     output: list of merged packets
 '''
-def merge_packets(packets, prexisting=False, remove_label=False):
+def merge_packets(packets, prexisting=False, remove_label=False, collecting_data=False):
     accl_packets = [p for p in packets if p['type'] == 'accl']
     imu_packets = [p for p in packets if p['type'] == 'imu']
     merged_packets = []
@@ -224,6 +147,8 @@ def merge_packets(packets, prexisting=False, remove_label=False):
             merged_packets.append({"timestamp": accl_packet['ts'], "payload": merged_payload, "label": accl_packet['label']})
         elif(remove_label):
             merged_packets.append({"ts": accl_packet['ts'], "payload": merged_payload})
+        elif(collecting_data):
+            merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload})
         else:
             merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload, 'label': accl_packet['label']})
     return merged_packets
@@ -267,15 +192,8 @@ def merge_files(accel_file_name, imu_file_name):
         # del item['timestamp']
         packets.append(item)
     
-    # print extensive diagnostics
-    # print( "accel_file_name: ", accel_file_name, "imu_file_name: ", imu_file_name)
-    # print("json_accel: ", json_accel)
     file_name = accel_file_name.replace("accel_data.json", "merged_data.json")
     merged_packets = merge_packets(packets, prexisting=True)
-    # for each of the merged ,packets, only keep the payload, ts, and label
-    # for packet in merged_packets:
-        # del packet['type']
-        # del packet['ts']
     
     # put the merged packets into a file named merged_packets.json
     with open(file_name, 'w') as f:
@@ -336,4 +254,68 @@ if __name__ == "__main__":
 
 
 
+# def final_feature_extraction_with_interpolation(new_dataframe, use_label):
+#     # List of columns from interpolation
+#     imu_features = ['thumb_imu_x', 'thumb_imu_y', 'thumb_imu_z', 'thumb_imu_pitch', 'thumb_imu_yaw', 'thumb_imu_roll']
 
+#     features = imu_features +  ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
+#                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z'] 
+
+
+#     fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
+
+    # # Average acceleration per axis
+    # avg_accel = new_dataframe[features].mean()
+
+    # # Calculate the average jerk per axis
+    # avg_jerk = new_dataframe[features].diff().mean()
+
+    # # Standard deviation per axis
+    # std_dev_accel = new_dataframe[features].std()
+
+    # # Average absolute difference per axis
+    # avg_abs_diff_accel = new_dataframe[features].diff().abs().mean()
+
+    # # Initialize dictionary to hold results
+    # avg_accel_mag = {}
+    # # Loop over each finger and calculate the average acceleration magnitude
+    # for finger in fingers:
+    #     avg_accel_mag[finger] = ((new_dataframe[[f'{finger}_x', f'{finger}_y', f'{finger}_z']] ** 2).sum(axis=1) ** 0.5).mean()
+
+    # # Time between peaks per axis
+    # time_between_peaks = {}
+    # for feature in features:
+    #     peaks, _ = find_peaks(new_dataframe[feature])
+    #     # check that there are peaks
+    #     if len(peaks) > 0:
+
+    #         time_between_peaks[feature] = np.diff(peaks).mean()
+
+    # # Calculate the average for IMU features
+    # avg_imu_features = new_dataframe[imu_features].mean()
+
+    # # Rename each key to be avg_accel_mag_{finger}
+    # avg_accel_dict = {f'avg_accel_{k}': v for k, v in avg_accel.items()}
+    # std_dev_accel_dict = {f'std_dev_accel_{k}': v for k, v in std_dev_accel.items()}
+    # avg_abs_diff_accel_dict = {f'avg_abs_diff_accel_{k}': v for k, v in avg_abs_diff_accel.items()}
+    # time_between_peaks_dict = {f'time_between_peaks_{k}': v for k, v in time_between_peaks.items()}
+    # avg_accel_mag_dict = {f'avg_accel_mag_{k}': v for k, v in avg_accel_mag.items()}
+    # avg_jerk_dict = {f'avg_jerk_{k}': v for k, v in avg_jerk.items()}
+    # avg_imu_features_dict = {f'avg_{k}': v for k, v in avg_imu_features.items()}
+
+    # # Convert dictionaries to DataFrames
+    # avg_accel_df = pd.DataFrame(avg_accel_dict, index=[0])
+    # std_dev_accel_df = pd.DataFrame(std_dev_accel_dict, index=[0])
+    # avg_abs_diff_accel_df = pd.DataFrame(avg_abs_diff_accel_dict, index=[0])
+    # time_between_peaks_df = pd.DataFrame(time_between_peaks_dict, index=[0])
+    # avg_accel_mag_df = pd.DataFrame(avg_accel_mag_dict, index=[0])
+    # avg_jerk_df = pd.DataFrame(avg_jerk_dict, index=[0])
+    # avg_imu_features_df = pd.DataFrame(avg_imu_features_dict, index=[0])
+    
+    # # Concatenate DataFrames
+    # data_df = pd.concat([avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df, avg_imu_features_df], axis=1)
+    
+    # if use_label:
+    #     data_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
+
+    # return data_df
