@@ -65,7 +65,6 @@ def OnTapConnected(self, identifier, name, fw):
 def OnTapDisconnected(self, identifier):
     print(str(identifier) + " Tap: " + identifier + " disconnected")
 
-
 def OnMoused(identifier, vx, vy, isMouse):
     print(str(identifier) + " mouse movement: %d, %d, %d" %(vx, vy, isMouse))
 

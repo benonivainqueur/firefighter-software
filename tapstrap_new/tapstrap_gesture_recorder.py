@@ -17,14 +17,11 @@ from tapsdk import TapSDK, TapInputMode
 
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 # signal handler function called when SIGINT is received
-
 def signal_handler(sig, frame):
     global is_recording
     is_recording = False
 signal.signal(signal.SIGINT, signal_handler)
 # setup signal handler for SIGINT (ctrl+c)
-
-
 
 global is_recording
 # Flag to control recording
@@ -110,6 +107,7 @@ def get_folder_label(folder_name):
 # set folder_tuples
 def set_folder_tuples(existing_folders, passed_folder_count):
     for folder in existing_folders:
+        # ignore folders that are empty
         if folder not in label_tuples.keys():
             label = get_folder_label(folder+ "0")
             label_tuples[folder] = label
@@ -121,14 +119,15 @@ def set_folder_tuples(existing_folders, passed_folder_count):
 def record_data():
     global is_recording
     global folder_count 
-    existing_folders = [folder for folder in os.listdir(base_path)]
+    # include only folders
+    existing_folders = [folder for folder in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, folder))]
     # remove numbers from each folder name
     existing_folders = [re.sub(r'\d+', '', folder) for folder in existing_folders]
     # for each unique folder name, get the number of folders with that name
     # folder_count = {'turn': -1, 'still':-1 , 'lever':-1}
     folder_count = {folder: existing_folders.count(folder) for folder in existing_folders}
     print ("folder_count", folder_count)
-    existing_folders = list(set(existing_folders))# remove duplicates
+    existing_folders = list(set(existing_folders))# get the unique folder names, i.e, our gestures 
     set_folder_tuples(existing_folders, folder_count)
     print("set folder tuples", label_tuples)
     # if len(existing_folders) == 0:
@@ -143,7 +142,7 @@ def record_data():
     while True:
         # if (not automate_collection):
         # gesture_name = input("Enter the name of the gesture (or 'quit' to quit): ").lower()
-        gesture_name = 'turn'
+        gesture_name = 'lever'
         is_recording = True
         
         # gesture_name = 'Turn'
@@ -175,6 +174,7 @@ def record_data():
             #     print("interpolated count atm: {0}".format(OnRawData.merge_cnt))
             #     sleep_time -= 1
             #     time.sleep(0.1)
+            # loop to wait for the data to be collected
             while (OnRawData.merge_cnt < 150):
                 pass
             
