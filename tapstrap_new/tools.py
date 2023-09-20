@@ -45,6 +45,9 @@ def feature_extraction(new_dataframe, use_label, interpolated = False):
 
     # calculate the average jerk per axis
     avg_jerk = new_dataframe[features].diff().mean()
+
+    # calculate the variance per axis
+    variance = new_dataframe[features].var()
     
     # print("JERK \n", avg_jerk)
 
@@ -77,6 +80,7 @@ def feature_extraction(new_dataframe, use_label, interpolated = False):
             time_between_peaks[feature] = 0
     # print(time_between_peaks)
 
+    variance_dict = {f'variance_{k}': v for k, v in variance.items()}
 
     # rename each key to be avg_accel_{finger}
     avg_accel_dict = {f'avg_accel_{k}': v for k, v in avg_accel.items()}
@@ -106,12 +110,14 @@ def feature_extraction(new_dataframe, use_label, interpolated = False):
     avg_jerk_df = pd.DataFrame(avg_jerk_dict, index=[0])
     kurtosis_df = pd.DataFrame(kurtosis_dict, index=[0])
     skew_df = pd.DataFrame(skew_dict, index=[0])
+    variance_df = pd.DataFrame(variance_dict, index=[0])
+
     # filter out any NaN values
     # replace all NaN values with 0
     time_between_peaks_df = time_between_peaks_df.fillna(0)
     # time_between_peaks_df = avg_accel_df.dropna(axis=1)
     # Concatenate DataFrames
-    data_df = pd.concat([skew_df,kurtosis_df,avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df], axis=1)
+    data_df = pd.concat([variance_df,skew_df,kurtosis_df,avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df], axis=1)
     if(use_label):
         data_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
 
