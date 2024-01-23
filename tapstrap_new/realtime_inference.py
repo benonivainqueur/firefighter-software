@@ -207,5 +207,3 @@ if __name__ == "__main__":
     # real_time_data = real_time_data.append(features, ignore_index=True)
 
 
-
-
