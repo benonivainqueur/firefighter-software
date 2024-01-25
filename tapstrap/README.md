@@ -2,6 +2,8 @@
 
 This project focuses on recognizing hand gestures using the Tapstrap wearable device. The Tapstrap contains multiple accelerometers and an IMU sensor to capture motion data.
 
+https://github.com/TapWithUs/tap-python-sdk
+
 ## Data Collection
 
 The `tapstrap_gesture_recorder.py` script allows collecting timestamped accelerometer and IMU data for different gestures like turn, still, lever etc. It saves the data into separate JSON files for IMU and accelerometer. It also interpolates the accelerometer and IMU data to a common timeframe so they can be merged easily. The merged data with interpolated timestamps is also saved. 
@@ -126,5 +128,3 @@ Run the cells in the notebook to load data, extract features, train models and e
 To run real-time inference: `python realtime_inference.py`
 This will load a pretrained model and display predictions as you perform gestures with the Tapstrap.
 There are additional configuration options in the scripts to customize parameters. 
-
-## References
