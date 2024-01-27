@@ -24,7 +24,7 @@ from tabulate import tabulate
 pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
 pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
 
-def feature_extraction(new_dataframe, use_label, interpolated = False):
+def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None,normalize=False):
     features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
 
@@ -34,7 +34,9 @@ def feature_extraction(new_dataframe, use_label, interpolated = False):
 
         features = imu_features +  ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z'] 
-
+    # normalize all the values
+    if normalize:
+        new_dataframe[features] = new_dataframe[features].apply(lambda x: (x - x.min()) / (x.max() - x.min()))
     # Average acceleration per axis
     
     # label = new_dataframe['label']
@@ -120,6 +122,8 @@ def feature_extraction(new_dataframe, use_label, interpolated = False):
     data_df = pd.concat([variance_df,skew_df,kurtosis_df,avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df], axis=1)
     if(use_label):
         data_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
+        if (assign_label != None ):
+            data_df['label'] = assign_label
 
     # table(data_df)
     # print('SHAPE:', data_df.shape)

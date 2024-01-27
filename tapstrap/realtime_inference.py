@@ -50,6 +50,8 @@ def process_interpolated_data(interpolated_data):
     The returned value is the prediction as a integer
 '''
 def perform_inference(df):
+    # drop nans from the dataframe
+    df = df.dropna()
     predictions = loaded_model.predict(df)
     print("predictions:", predictions)
     return predictions[0]
@@ -62,7 +64,7 @@ def on_raw_data_no_thumb(identifier, packets):
         on_raw_data.imu_cnt = 0
         # print("performing inference")
         new_df = process_accelerometer_data(timestamped_accel_values)
-        feature_df = feature_extraction(new_df, use_label=False)
+        feature_df = feature_extraction(new_df, use_label=False,normalize=True)
         perform_inference(feature_df)
         # clear out the arrays
         timestamped_accel_values.clear()
@@ -100,7 +102,7 @@ def on_raw_data(identifier, packets):
         # print("performing inference")
         if use_thumb:
             new_df = process_interpolated_data(timestamped_interpolated_values)
-            feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb)
+            feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
             int = perform_inference(feature_df)
             if (int == 1 and client != None):
               print("vibrate")
@@ -108,7 +110,7 @@ def on_raw_data(identifier, packets):
             reset_arrays()
         else:
             new_df = process_accelerometer_data(timestamped_accel_values)
-            feature_df = feature_extraction(new_df, use_label=False)
+            feature_df = feature_extraction(new_df, use_label=False, normalize=True)
             val = perform_inference(feature_df)
             reset_arrays()
     else: 
@@ -165,7 +167,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 200 # how many readings we need to perform feature extraction and inference
+polling_window = 150 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
@@ -182,7 +184,7 @@ if __name__ == "__main__":
     model_tuples = [(models[i], i) for i  in range(len(models))]
     # take input, 1 for KNN, 2 for Logistic Regression, 3 for Random Forest, 4 for SVM
     model_num = input("Enter model number. {models}:".format(models=model_tuples))
-    model_path = 'firefighter-software/tapstrap_new/models/{m}'.format(m = model_tuples[int(model_num)][0])
+    model_path = 'tapstrap/models/{m}'.format(m = model_tuples[int(model_num)][0])
     print("Using model: {m}".format(m = model_tuples[int(model_num)][0]))
     loaded_model = joblib.load(model_path)
     # # load in model
@@ -195,15 +197,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
         loop.close()
-
-# while True:
-    # Read new accelerometer data
-    # Process the data and extract required features
-    # new_data = process_accelerometer_data()
-    # features = final_feature_extraction(new_data)
-
-
-    # Append the features to the real-time data dataframe
-    # real_time_data = real_time_data.append(features, ignore_index=True)
 
 

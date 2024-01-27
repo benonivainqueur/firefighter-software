@@ -36,7 +36,7 @@ merged_values = []
 global first_iteration
 first_iteration = True
 global base_path
-base_path = './firefighter-software/tapstrap_new/training_data/data_2'
+base_path = 'tapstrap/training_data/finger_taps'
 
 def OnRawData(identifier, packets):
     if is_recording:
@@ -62,7 +62,9 @@ OnRawData.merge_cnt = 0
 
 # gesture list 
 # label_tuples = [('turn', 1), ('still',0), ('lever',2)]
-label_tuples = {'turn': 1, 'still':0 , 'lever':2}
+# label_tuples = {'turn': 1, 'still':0 , 'lever':2}
+label_tuples = {}
+
 # add a new entry to the dictionary
 first_iteration = True
 
@@ -109,7 +111,7 @@ def set_folder_tuples(existing_folders, passed_folder_count):
     for folder in existing_folders:
         # ignore folders that are empty
         if folder not in label_tuples.keys():
-            label = get_folder_label(folder+ "0")
+            label = get_folder_label(folder+ "1")
             label_tuples[folder] = label
             folder_count[folder] = passed_folder_count[folder]
             print("folder_count[{folder}]".format(folder=folder), folder_count[folder])
@@ -137,21 +139,45 @@ def record_data():
     #     print("folder_count", folder_count)
     # for folder in existing_folders:
     #     if folder in folder_count.keys():
-    #         folder_count[folder] = -1
+    #         folder_count[folder] = -1p
     print("existing_folders", existing_folders)
+    # if no existing folders, ask for a folder name, and create a new folder
+    # if len(existing_folders) == 0:
+    #     folder_name = input("No existing folders.. enter the name of the gesture (or 'quit' to quit): ").lower()
+    #     if folder_name.lower() == 'quit':
+    #         # is_recording = False
+    #         print("Quitting...")
+    #         return
+    #     else:
+    #         # add new entry to the dictionary
+    #         folder_count[folder_name] = 0
+    #         label_tuples[folder_name] = 0
+    #         # folder_count[folder_name] = 0
+    #         # label_tuples[folder_name] = 0
+    old_gesture_name = ''
+    auto_mode = False
+    print("Type 'auto' and your gesture name following it to enable auto mode... 'auto wave' for example")
     while True:
         # if (not automate_collection):
-        # gesture_name = input("Enter the name of the gesture (or 'quit' to quit): ").lower()
-        gesture_name = 'lever'
+        if not auto_mode:
+            gesture_name = input("Enter the name of the gesture (or 'quit' to quit). (press enter to continue to keep the previous gesture name) ").lower()
+        if gesture_name == '' and old_gesture_name != '':
+            print("using previous gesture name of {0}".format(old_gesture_name))
+            gesture_name = old_gesture_name
+        else:
+            old_gesture_name = gesture_name
+        # gesture_name = 'lever'
+        if 'auto' in gesture_name.lower() :
+            auto_mode = True
+            gesture_name = gesture_name.split(' ')[1]
+            print("Auto mode enabled")
+
         is_recording = True
         
         # gesture_name = 'Turn'
         if gesture_name.lower() == 'quit':
             # is_recording = False
             print("Quitting...")
-            # kill the current thread
-            # exit the program
-            # kill the asyncio loop
             return 
         else:
             global timestamped_imu_values
@@ -169,51 +195,43 @@ def record_data():
             # make a time counter that will count down from 3 to 0
             #
             # sleep_time = 10
-            print("Start recording, press ctrl+c to stop recording...")
-            # while sleep_time > 0:
-            #     print("interpolated count atm: {0}".format(OnRawData.merge_cnt))
-            #     sleep_time -= 1
-            #     time.sleep(0.1)
-            # loop to wait for the data to be collected
-            while (OnRawData.merge_cnt < 150):
-                pass
+            print("press ctrl+c to stop recording...")
+            # while (OnRawData.merge_cnt < 150):
+            #     # this is to ensure that we have enough data to perform feature extraction and inference
+            #     pass
             
-            # while is_recording:
-            #     # print a message very 5 iterations 
-            #     if OnRawData.imu_cnt % 5 == 0:
-            #         print("Recording...", OnRawData.imu_cnt)
-            #     time.sleep(0.1)
+            while is_recording:
+                # print a message very 5 iterations 
+                if OnRawData.imu_cnt % 5 == 0:
+                    print("Recording...", OnRawData.imu_cnt)
+                time.sleep(0.1)
             # if the owrd turn is in the gesture name, then set the label to 1
             # label = label_tuples[gesture_name.lower()]
             # base_path = './interpolated_data'
             if gesture_name not in folder_count.keys():
                 print("adding a new gesture", gesture_name)
                 # add new entry to the dictionary
-                folder_count[gesture_name] = -1 
+                folder_count[gesture_name] = 0
                 label_tuples[gesture_name] = len(label_tuples.keys())
-                
+            
+            # gets the next folder number
             next_folder_num = get_next_folder_num(gesture_name)
             folder_name = f'{gesture_name}{next_folder_num}'
             folder_count[gesture_name] = next_folder_num
             label = label_tuples[gesture_name]
-
             folder_path = os.path.join(base_path, folder_name)
             os.makedirs(folder_path, exist_ok=False)
             imu_file_path = os.path.join(folder_path, 'imu_data.json')
             accel_file_path = os.path.join(folder_path, 'accel_data.json')  
-            interpolation_file_path = os.path.join(folder_path, 'merged_data.json')  
+            interpolation_file_path = os.path.join(folder_path, 'merged_data.json')
 
+            # save the data to the folder
             file_writer(imu_file_path, timestamped_imu_values, label)
             file_writer(accel_file_path, timestamped_accel_values, label)
             file_writer(interpolation_file_path, merged_values, label)
        
             print(f"Data saved to {imu_file_path} and {accel_file_path} and {interpolation_file_path}")
-            # print("# IMU packets recieved: ", len(timestamped_imu_values)))
-            print("# IMU Entries", len(timestamped_imu_values))
-            # print("# Accel packets recieved: ", OnRawData.accel_cnt)
-            print("# Aceel Entries", len(timestamped_accel_values))
-            # print("# interpolated packets recieved: ", OnRawData.accel_cnt)
-            print("# interpolated Entries", len(merged_values))
+            print("# Entries IMU:{} | Accel:{} | Interpolated {}".format(len(timestamped_imu_values), len(timestamped_accel_values), len(merged_values)))
 
 def interpolate_and_save(imu_file_path, accel_file_path, output_file_path, label):
     # Load IMU data
