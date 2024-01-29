@@ -51,33 +51,42 @@ def process_interpolated_data(interpolated_data):
 '''
 def perform_inference(df):
     # drop nans from the dataframe
-    df = df.dropna()
-    predictions = loaded_model.predict(df)
-    print("predictions:", predictions)
-    return predictions[0]
+    # try catch
+    predictions = []
+    try: 
+        df = df.dropna()
+        predictions = loaded_model.predict(df)
+        print("predictions:", predictions)
+    except Exception as e:
+        # print(e)
+        print("error in inference")
+    if len(predictions) == 0:
+        return -1
+    else: 
+        return predictions[0]
     
         
 
-def on_raw_data_no_thumb(identifier, packets):
-    if  (on_raw_data.accel_cnt >= 200 or on_raw_data.imu_cnt >= 200):
-        on_raw_data.accel_cnt = 0
-        on_raw_data.imu_cnt = 0
-        # print("performing inference")
-        new_df = process_accelerometer_data(timestamped_accel_values)
-        feature_df = feature_extraction(new_df, use_label=False,normalize=True)
-        perform_inference(feature_df)
-        # clear out the arrays
-        timestamped_accel_values.clear()
-        timestamped_imu_values.clear()
-        print(timestamped_accel_values)
-    else: 
-        for m in packets:
-            if m["type"] == "imu":
-                timestamped_imu_values.append(m["payload"])
-                on_raw_data.imu_cnt += 1
-            if m["type"] == "accl":
-                timestamped_accel_values.append(m["payload"])
-                on_raw_data.accel_cnt += 1
+# def on_raw_data_no_thumb(identifier, packets):
+#     if  (on_raw_data.accel_cnt >= 200 or on_raw_data.imu_cnt >= 200):
+#         on_raw_data.accel_cnt = 0
+#         on_raw_data.imu_cnt = 0
+#         # print("performing inference")
+#         new_df = process_accelerometer_data(timestamped_accel_values)
+#         feature_df = feature_extraction(new_df, use_label=False,normalize=True)
+#         perform_inference(feature_df)
+#         # clear out the arrays
+#         timestamped_accel_values.clear()
+#         timestamped_imu_values.clear()
+#         print(timestamped_accel_values)
+#     else: 
+#         for m in packets:
+#             if m["type"] == "imu":
+#                 timestamped_imu_values.append(m["payload"])
+#                 on_raw_data.imu_cnt += 1
+#             if m["type"] == "accl":
+#                 timestamped_accel_values.append(m["payload"])
+#                 on_raw_data.accel_cnt += 1
 
 '''
     clears out the arrays and resets the counters
@@ -105,8 +114,7 @@ def on_raw_data(identifier, packets):
             feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
             int = perform_inference(feature_df)
             if (int == 1 and client != None):
-              print("vibrate")
-              
+                print("vibrate")
             reset_arrays()
         else:
             new_df = process_accelerometer_data(timestamped_accel_values)
@@ -167,7 +175,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 150 # how many readings we need to perform feature extraction and inference
+polling_window = 100 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
