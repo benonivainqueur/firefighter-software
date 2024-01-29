@@ -1,25 +1,26 @@
 import pandas as pd
-import json
 import pandas as pd
 import matplotlib.pyplot as plt
-import sys
 import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
-from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
-import joblib
 import pandas as pd
 import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
 
+import seaborn as sns
+import joblib
+import json
+import sys
+
+# from sklearn.metrics import confusion_matrix
+# from sklearn.metrics import accuracy_score, classification_report
+# from sklearn.ensemble import RandomForestClassifier
+# from sklearn.svm import SVC
+# from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.linear_model import LogisticRegression
 
 pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
 pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
