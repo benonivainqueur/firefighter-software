@@ -130,15 +130,6 @@ def feature_extraction(new_dataframe, use_label, interpolated = False, assign_la
     return data_df
 
 '''
-    this function will use tabulate to print out a table
-    input: dataframe
-    output: table
-'''
-def table(t) :
-    table = tabulate(t, headers='keys', tablefmt='fancy_grid')
-    print(table)
-
-'''
     This function will take in a list of packets, and merge them together.
     The way it is being merged is by taking the closest imu packet to the accl packet, and merging them.
     
@@ -164,8 +155,7 @@ def merge_packets(packets, prexisting=False, remove_label=False, collecting_data
     return merged_packets
 
 '''
-    This function will take in a list of packets, and merge them together.
-    The way it is being merged is by taking the closest imu packet to the accl packet, and merging them.
+    takes a accel file name, and imu file name, and merges them together
     '''
 def merge_files(accel_file_name, imu_file_name):
     import pandas as pd
@@ -214,19 +204,21 @@ def merge_files(accel_file_name, imu_file_name):
             item = item.replace("'", '"')
             f.write("%s\n" % item)
 
-
-# this function was used to go through all the data that we already collected, and merge it. 
-# i am interpolating it as if i am collecitng it in real time, so when we now collect more data, it isnt 
-# a different format. The way it is being merged is by taking the closest imu packet to the accl packet, and merging them.
-def merge_preexisting_data():
+'''
+this function was used to go through all the data that we already collected, and merge it. 
+i am interpolating it as if i am collecitng it in real time, so when we now collect more data, it isnt 
+a different format. The way it is being merged is by taking the closest imu packet to the accl packet, and merging them.
+'''
+def merge_preexisting_data(base_path = ''):
+    base_path  = '/Users/benv/Desktop/Tap Strap/firefighter-software/tapstrap_new/training_data/data'
     import os
     import pandas as pd
     # get the folers, and iterate throug
     # print current directory
     print("cwd", os.getcwd())
     # for folder in folder
-    dir_list = os.listdir("/Users/benv/Desktop/Tap Strap/firefighter-software/tapstrap_new/training_data/data")
-    dir_name = "/Users/benv/Desktop/Tap Strap/firefighter-software/tapstrap_new/training_data/data"
+    dir_list = os.listdir(base_path)
+    dir_name = base_path
     num_still_folders = len([i for i in dir_list if "Still" in i])
     num_turn_folders = len([i for i in dir_list if "Turn" in i])
     num_lever_folders = len([i for i in dir_list if "lever" in i]) 
@@ -253,79 +245,17 @@ test_packets = [{'type': 'accl', 'ts': 5711184, 'payload': [0, 12, -29, -32, 2, 
                 {'type': 'imu', 'ts': 5711199, 'payload': [-157, 91, 112, 438, 3430, -7695]}, 
                 {'type': 'accl', 'ts': 5711200, 'payload': [0, 11, -29, -32, 2, -7, -32, 2, -2, -32, 0, 5, -32, 1, 4]}]
 
-
-
-
 # interpolate_preexisting_data()
 
 if __name__ == "__main__":
     pass
-# create main method for testing
 
 
-
-# def final_feature_extraction_with_interpolation(new_dataframe, use_label):
-#     # List of columns from interpolation
-#     imu_features = ['thumb_imu_x', 'thumb_imu_y', 'thumb_imu_z', 'thumb_imu_pitch', 'thumb_imu_yaw', 'thumb_imu_roll']
-
-#     features = imu_features +  ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
-#                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z'] 
-
-
-#     fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-
-    # # Average acceleration per axis
-    # avg_accel = new_dataframe[features].mean()
-
-    # # Calculate the average jerk per axis
-    # avg_jerk = new_dataframe[features].diff().mean()
-
-    # # Standard deviation per axis
-    # std_dev_accel = new_dataframe[features].std()
-
-    # # Average absolute difference per axis
-    # avg_abs_diff_accel = new_dataframe[features].diff().abs().mean()
-
-    # # Initialize dictionary to hold results
-    # avg_accel_mag = {}
-    # # Loop over each finger and calculate the average acceleration magnitude
-    # for finger in fingers:
-    #     avg_accel_mag[finger] = ((new_dataframe[[f'{finger}_x', f'{finger}_y', f'{finger}_z']] ** 2).sum(axis=1) ** 0.5).mean()
-
-    # # Time between peaks per axis
-    # time_between_peaks = {}
-    # for feature in features:
-    #     peaks, _ = find_peaks(new_dataframe[feature])
-    #     # check that there are peaks
-    #     if len(peaks) > 0:
-
-    #         time_between_peaks[feature] = np.diff(peaks).mean()
-
-    # # Calculate the average for IMU features
-    # avg_imu_features = new_dataframe[imu_features].mean()
-
-    # # Rename each key to be avg_accel_mag_{finger}
-    # avg_accel_dict = {f'avg_accel_{k}': v for k, v in avg_accel.items()}
-    # std_dev_accel_dict = {f'std_dev_accel_{k}': v for k, v in std_dev_accel.items()}
-    # avg_abs_diff_accel_dict = {f'avg_abs_diff_accel_{k}': v for k, v in avg_abs_diff_accel.items()}
-    # time_between_peaks_dict = {f'time_between_peaks_{k}': v for k, v in time_between_peaks.items()}
-    # avg_accel_mag_dict = {f'avg_accel_mag_{k}': v for k, v in avg_accel_mag.items()}
-    # avg_jerk_dict = {f'avg_jerk_{k}': v for k, v in avg_jerk.items()}
-    # avg_imu_features_dict = {f'avg_{k}': v for k, v in avg_imu_features.items()}
-
-    # # Convert dictionaries to DataFrames
-    # avg_accel_df = pd.DataFrame(avg_accel_dict, index=[0])
-    # std_dev_accel_df = pd.DataFrame(std_dev_accel_dict, index=[0])
-    # avg_abs_diff_accel_df = pd.DataFrame(avg_abs_diff_accel_dict, index=[0])
-    # time_between_peaks_df = pd.DataFrame(time_between_peaks_dict, index=[0])
-    # avg_accel_mag_df = pd.DataFrame(avg_accel_mag_dict, index=[0])
-    # avg_jerk_df = pd.DataFrame(avg_jerk_dict, index=[0])
-    # avg_imu_features_df = pd.DataFrame(avg_imu_features_dict, index=[0])
-    
-    # # Concatenate DataFrames
-    # data_df = pd.concat([avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df, avg_imu_features_df], axis=1)
-    
-    # if use_label:
-    #     data_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
-
-    # return data_df
+'''
+    this function will use tabulate to print out a table
+    input: dataframe
+    output: table
+'''
+def table(t) :
+    table = tabulate(t, headers='keys', tablefmt='fancy_grid')
+    print(table)
