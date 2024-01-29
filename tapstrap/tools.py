@@ -175,7 +175,7 @@ def merge_files(accel_file_name, imu_file_name):
     # load in the json into a list 
     json_accel = []
     json_imu = []
-   
+
     with open(accel_file_name) as f:
         for line in f:
             json_accel.append(json.loads(line))

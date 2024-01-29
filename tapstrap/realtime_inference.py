@@ -167,7 +167,7 @@ async def run(loop, debug=False):
     # await asyncio.sleep(3)
     # await client.send_vibration_sequence([100, 200])
     await asyncio.sleep(run_time, True) # this line  is to keep the program running for 50 seconds
-  
+
 on_raw_data.imu_cnt = 0
 on_raw_data.accel_cnt = 0
 on_raw_data.interpol_cnt = 0  
@@ -175,7 +175,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 100 # how many readings we need to perform feature extraction and inference
+polling_window = 150 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
@@ -187,7 +187,8 @@ if __name__ == "__main__":
     # get the name of each model under the model directory
     # models = ["KNeighborsClassifier", "LogisticRegression", "RandomForestClassifier", "SVC"]
     models = os.listdir(current_dir + "/models/")
-
+    # remove .DS_Store from the list
+    models.remove(".DS_Store")
     # use list comprehension to map a index to a model name 
     model_tuples = [(models[i], i) for i  in range(len(models))]
     # take input, 1 for KNN, 2 for Logistic Regression, 3 for Random Forest, 4 for SVM
