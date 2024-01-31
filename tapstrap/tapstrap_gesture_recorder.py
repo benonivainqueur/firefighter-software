@@ -288,7 +288,7 @@ async def run(loop, debug=False):
     logger.info("Connected: {0}".format(x))
 
     # await client.set_input_mode(TapInputMode("controller"))
-    await client.set_input_mode(TapInputMode("controller"))
+    # await client.set_input_mode(TapInputMode("controller"))
     # await client.send_vibration_sequence([100, 200, 300, 400, 500])
 
 

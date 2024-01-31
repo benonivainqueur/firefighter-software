@@ -25,7 +25,7 @@ import sys
 pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
 pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
 
-def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None,normalize=False):
+def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None, normalize=False):
     features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
 
