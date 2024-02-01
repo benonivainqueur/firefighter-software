@@ -25,4 +25,19 @@ This folder is our networking investigations, i.e. sending data around. Will inv
 
 Let me know if you need any other overview or summary of the repository! I'm happy to provide more details on specific parts as well.
 
+
+## Hardware
+OrangePi Setup
+ssh root@192.168.0.63
+ssh orangepi@192.168.0.63
+wiki:
+http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#SSH_remote_login_development_board
+wifi tool:
+nmcli dev wifi
+sudo nmcli dev wifi connect wifi_name password wifi_passwd
+bluetooth tool:
+bluetoothctl
+Method to create WIFI hotspot through create_ap
+
+http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#SSH_remote_login_development_board
 - Benoni Vainqueur 
