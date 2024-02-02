@@ -3,7 +3,7 @@
 
 import matplotlib
 matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from matplotlib import style
@@ -20,7 +20,7 @@ a = f.add_subplot(111)
 
 
 def animate(i):
-    pullData = open("sampleText.txt","r").read()
+    pullData = open("./sampleText.txt","r").read()
     dataList = pullData.split('\n')
     xList = []
     yList = []
@@ -42,7 +42,7 @@ class SeaofBTCapp(tk.Tk):
         
         tk.Tk.__init__(self, *args, **kwargs)
 
-        tk.Tk.iconbitmap(self, default="clienticon.ico")
+        # tk.Tk.iconbitmap(self, default="clienticon.ico")
         tk.Tk.wm_title(self, "Sea of BTC client")
         
         
@@ -137,11 +137,12 @@ class PageThree(tk.Frame):
         
 
         canvas = FigureCanvasTkAgg(f, self)
-        canvas.show()
+        canvas.draw()
         canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
-        toolbar = NavigationToolbar2TkAgg(canvas, self)
+        toolbar = NavigationToolbar2Tk(canvas, self)
         toolbar.update()
+        toolbar.pack()
         canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 

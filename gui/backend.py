@@ -2,6 +2,12 @@ import socket
 import threading
 import json
 import time
+from firefighter_client import Firefighter
+from tools import get_demo_firefighter_data
+# create a set of test firefighters
+firefighter1 = Firefighter(1,"John", "Building A, Floor 2" )
+firefighter2 = Firefighter(2,"Sarah", "Building A, Floor 2" )
+firefighter3 = Firefighter(3,"Michael", "Building A, Floor 2" )
 
 class DataServer:
     def __init__(self):
@@ -24,7 +30,6 @@ class DataServer:
         while True:
             client, addr = self.server.accept()
             print(f"Connected to {addr}")
-
             client_handler = threading.Thread(target=self.handle_client, args=(client,))
             client_handler.start()
 
@@ -33,7 +38,7 @@ class DataServer:
             while True:
                 data = self.get_data_with_timestamp()
                 client.sendall(data.encode())
-                time.sleep(5)  # Simulate data update every 5 seconds
+                time.sleep(1)  # Simulate data update every 5 seconds
         except ConnectionResetError:
             print("Client disconnected")
             client.close()
