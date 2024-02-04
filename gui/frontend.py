@@ -42,6 +42,14 @@ demo_firefighter_data = [
     }
 
 ]
+
+def update_treeview(treeview, text, var):
+        new_value = var.get()
+        # Find the item in the Treeview that corresponds to the label_text
+        for item in treeview.get_children():
+            if treeview.item(item, "values")[0] == text:
+                # Update the value in the Treeview
+                treeview.item(item, values=(text, new_value))
 class DashboardApp:
     def __init__(self, root):
         self.root = root
@@ -56,16 +64,37 @@ class DashboardApp:
         # self.root.rowconfigure(0, weight=1)     # Make the row expandable
 
         # Create the left and right frames
-        self.left_frame = tk.Frame(self.root)
-        self.left_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
+        self.root.resizable(height = None, width = None)
+        self.left_frame = tk.PanedWindow(self.root, orient="vertical")
+        self.left_frame.pack(side="left", padx=10, pady=10, expand=True)
+        # self.left_frame.resizable(height = 100, width = 100)
 
-        self.right_frame = tk.Frame(self.root)
-        self.right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=True)
-
-        # Make the right frame resizable
-        self.right_frame.columnconfigure(0, weight=1)  # Make the column expandable
-        self.right_frame.rowconfigure(0, weight=1)     # Make the row expandable
+        self.right_frame = tk.PanedWindow(self.root, orient="horizontal")
         
+        # self.right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=False)
+        self.right_frame.pack(fill="both", expand=True)
+        # create bottom frame
+        self.bottom_frame = tk.PanedWindow(self.root, orient="horizontal")
+        # make the 
+        self.bottom_frame.pack()
+        # self.bottom_frame.pack(side="bottom", padx=10, pady=10, fill="both", expand=True)
+        
+        # Make the right frame resizable
+        # self.right_frame.columnconfigure(0, weight=1)  # Make the column expandable
+        # self.right_frame.rowconfigure(0, weight=1)     # Make the row expandable
+        
+        # make the left frame resizeable
+        # self.left_frame.columnconfigure(0, weight=1)  # Make the column expandable
+        # self.left_frame.rowconfigure(0, weight=1)     # Make the row expandable
+
+        # make the bottom frame resizeable
+        # self.bottom_frame.columnconfigure(0, weight=1)  # Make the column expandable
+        # self.bottom_frame.rowconfigure(0, weight=1)     # Make the row expandable
+        
+        # put a divider between the firefighter data and the gesture data
+        divider = ttk.Separator(self.bottom_frame, orient="horizontal", style="TSeparator")
+        divider.pack(fill="x")
+        # 
         # Create tabs in the left frame
         self.left_notebook = ttk.Notebook(self.left_frame)
         self.left_notebook.pack(fill="both", expand=True)
@@ -109,7 +138,7 @@ class DashboardApp:
         self.refresh_button.pack()
 
         # Create the main notebook with tabs
-        self.notebook = ttk.Notebook(root)
+        self.notebook = ttk.Notebook(self.right_frame)
         self.notebook.pack(expand=True, fill=tk.BOTH)
 
         # Create tabs
@@ -198,6 +227,7 @@ class DashboardApp:
             firefighter_id = firefighter["id"]
             self.create_firefighter_widget(tab_frame, firefighter_id, firefighter)
             self.update_firefighter_widget(firefighter_id, firefighter)
+  
 
     def create_firefighter_widget(self, tab_frame, firefighter_id, firefighter_data):
         # Create and pack separator
@@ -214,6 +244,7 @@ class DashboardApp:
         # Create view representation data and store it using firefighter_id as key
         view_data = {
             "name_var": tk.StringVar(value=firefighter_data["name"]),
+            "id": tk.StringVar(frame, value=firefighter_data["id"]),
             "location_var": tk.StringVar(value=firefighter_data["location"]),
             "gesture_var": tk.StringVar(value="None"),
             "wifi_strength_var": tk.StringVar(value="None"),
@@ -225,21 +256,62 @@ class DashboardApp:
         # Create and pack labels
         labels = [
             ("Name", view_data["name_var"]),
-            ("ID", firefighter_id),
+            # ("ID", firefighter_id),
+            # ("ID", view_data["id"])
+            # ("IP", "123.456.789.0"),
+            # ("Bluetooth ID", "1234567890"),
+            # ("Tapstrap Connected", "True"),
+            # ("TapStrap Battery", "100%"),
             ("Location", view_data["location_var"]),
             ("Gesture", view_data["gesture_var"]),
             ("Wifi Strength", view_data["wifi_strength_var"]),
             ("Last Updated", view_data["last_updated_var"]),
         ]
-        for label_text, label_var in labels:
-            label = tk.Label(frame, text=label_text + ": ", anchor="e")
-            label.pack(side=tk.LEFT, padx=5, pady=5)
-            value_label = tk.Label(frame, textvariable=label_var)
-            value_label.pack(side=tk.LEFT, padx=5, pady=5)
+        # for label_text, label_var in labels:
+        #     label = tk.Label(frame, text=label_text + ": ", anchor="e")
+        #     # label.pack(side=tk.LEFT, padx=5, pady=5)
+        #     label.pack()
+        #     # justfiy the text such that everything is evenly spaced 
+        #     value_label = tk.Label(frame, textvariable=label_var)
+        #     # value_label.pack(side=tk.LEFT, padx=5, pady=5)
+        #     value_label
 
+        # for label_text, label_var in labels:
+        #     label = tk.Label(frame, text=label_text + ": ", anchor="e")
+        #     # label.pack()
+        #     value_label = tk.Label(frame, textvariable=label_var)
+        #     # value_label.pack()
+
+        # Create and pack treeview widget
+        treeview = ttk.Treeview(frame, columns=("name", "value"), show="headings")
+        treeview.pack()
+        treeview.heading("name", text="firefighter name:")
+        treeview.heading("value", text=firefighter_data["name"])
+        # Insert firefighter data as rows in the table
+        for label_text, label_var in labels:
+            treeview.insert("", "end", values=(label_text, label_var.get()))
+
+            # Trace changes in the StringVar and update Treeview
+            label_var.trace("w", lambda *args, var=label_var, text=label_text: update_treeview(treeview, text, var))
+
+
+        # for label_text, label_var in labels:
+        #     treeview.insert("", "end", values=(label_text, label_var.get()))
+        # for label_text, label_var in labels:
+        #     # label_text = tk.Label(frame, text=label_text + ": ", anchor="e")
+        #     # label_var = tk.Label(frame, textvariable=label_var)
+        #     # treeview.insert("", "end", values=(label_text, label_var))
+        #     treeview.insert("", "end", values=(label_text, label_var))
+    # Function to update Treeview with new values
+  
     def update_firefighter_widget(self, firefighter_id, new_firefighter_data):
         # Update actual firefighter data
-        # print("firefighter id: ", firefighter_id)
+        print("firefighter id: ", firefighter_id)
+        # for data in self.firefighter_data[firefighter_id]:
+        #     view_data = self.view_data[firefighter_id]
+
+            
+        # print("data", data)
         self.firefighter_data[firefighter_id].update(new_firefighter_data)
 
         # Update view representation data
@@ -251,8 +323,8 @@ class DashboardApp:
         view_data["last_updated_var"].set(new_firefighter_data["last_updated"])
 
         # Apply color to wifi strength and last updated based on the values
-        self.apply_color_to_wifi_strength(firefighter_id)
-
+        # self.apply_color_to_wifi_strength(firefighter_id)
+    
     def apply_color_to_wifi_strength(self, firefighter_id):
         # Access view representation data
         view_data = self.view_data[firefighter_id]
@@ -504,18 +576,18 @@ class DashboardApp:
     def receive_data(self):
         while True:
             try:
-                # data = self.client_socket.recv(1024).decode()
-                # print("Received data:", data)
-                pass
+                data = self.client_socket.recv(1024).decode()
+                print("Received data:", data)
+                # pass
                 # data_dict = json.loads(data)
-                # self.refresh_data()
+                self.refresh_data()
             # catch all errors
             except Exception as e:
                 print("Connection to the server closed")
                 # try to reconnect
                 self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.client_socket.connect((self.server_host, self.server_port))
-                continue
+                # continue
                 # break
             self.update_labels([])
         
@@ -548,9 +620,9 @@ class DashboardApp:
         # update firefighter data
         # self.render_firefighter_data()
         for firefighter in get_demo_firefighter_data():
-            pass
-            # firefighter_id = firefighter["id"]
-            # self.update_firefighter_widget(firefighter_id, firefighter)
+            # pass
+            firefighter_id = firefighter["id"]
+            self.update_firefighter_widget(firefighter_id, firefighter)
             # firefighter["gesture"].set("None")
         # self.update_firefighter_widget()
         # self.render_firefighter_data()
@@ -568,6 +640,6 @@ if __name__ == "__main__":
 
     root.mainloop()
 
-User
-I want to have a matplotlib chart within a tab named "realtime mesh network structure"
+# User
+# I want to have a matplotlib chart within a tab named "realtime mesh network structure"
 # I want it to use the lsit of firefighters, and show how the networks are chained together.  I want my computer to be seen as the abse station, and each firefighter should be a node thats connecting. Make this a function as this will be changing in real time, and the tree/graph structure will change 

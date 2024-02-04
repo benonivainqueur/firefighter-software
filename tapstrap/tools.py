@@ -25,6 +25,13 @@ import sys
 pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
 pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
 
+def get_platform():
+    import platform 
+    if  platform.system() == "Darwin":
+        return False
+    elif platform.system() == "Linux" or platform.system() == "Windows" or platform.system() == "Ubuntu" or platform.system() == "Debian" or platform.system() == "Fedora" :
+        return True
+
 def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None, normalize=False):
     features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
@@ -247,6 +254,13 @@ test_packets = [{'type': 'accl', 'ts': 5711184, 'payload': [0, 12, -29, -32, 2, 
                 {'type': 'accl', 'ts': 5711200, 'payload': [0, 11, -29, -32, 2, -7, -32, 2, -2, -32, 0, 5, -32, 1, 4]}]
 
 # interpolate_preexisting_data()
+
+
+def connect_to_tapstrap(): 
+
+    # connect to the tapstrap
+    pass
+
 
 if __name__ == "__main__":
     pass

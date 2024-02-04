@@ -19,9 +19,16 @@ import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
 import time
-from tools import feature_extraction, table
+from tools import feature_extraction, table, get_platform
 # from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap_interpolated import merge_packets
+
+on_linux = False
+# use os package to determine if we are on a form of linux
+on_linux = get_platform()
+# check if we are on ubuntu
+
+    
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 
 # List to hold features

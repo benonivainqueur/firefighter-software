@@ -40,4 +40,11 @@ bluetoothctl
 Method to create WIFI hotspot through create_ap
 
 http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#SSH_remote_login_development_board
+https://github.com/oblique/create_ap
+
+
+## Networking Linsk
+https://github.com/waterrmalann/NetworkBandwidthMonitor
+https://github.com/Goldent00thbrush/Bandwidth_Monitor
+https://openthread.io/guides/thread-primer
 - Benoni Vainqueur 
