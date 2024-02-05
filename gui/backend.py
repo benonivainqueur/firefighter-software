@@ -33,15 +33,26 @@ class DataServer:
             client_handler = threading.Thread(target=self.handle_client, args=(client,))
             client_handler.start()
 
-    def handle_client(self, client):
+    # def handle_client(self, client):
+    #     try:
+    #         while True:
+    #             data = self.get_data_with_timestamp()
+    #             client.sendall(data.encode())
+    #             time.sleep(1)  # Simulate data update every 5 seconds
+    #     except ConnectionResetError:
+    #         print("Client disconnected")
+    #         client.close()
+
+    def handle_client(self, client, addr):
         try:
             while True:
-                data = self.get_data_with_timestamp()
+                data = self.get_data_with_timestamp(addr)  # Include client address in the data
                 client.sendall(data.encode())
-                time.sleep(1)  # Simulate data update every 5 seconds
+                time.sleep(1)  # Simulate data update every 1 second
         except ConnectionResetError:
-            print("Client disconnected")
+            print(f"Client {addr} disconnected")
             client.close()
+
 
     def get_data_with_timestamp(self):
         timestamp = time.time()
@@ -54,3 +65,7 @@ class DataServer:
 if __name__ == "__main__":
     server = DataServer()
     server.start_server()
+
+    # in a seperate thread, simulate a firefighter client by running the firefighter_client.py file
+    # t = threading.Thread(target=run_tapstrap_subprocess, args=("firefighter_client.py",))
+

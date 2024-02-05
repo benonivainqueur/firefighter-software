@@ -5,7 +5,7 @@ import json
 import threading
 import time
 import matplotlib.pyplot as plt
-
+import queue 
 from tkinter import filedialog
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -52,6 +52,17 @@ def update_treeview(treeview, text, var):
                 treeview.item(item, values=(text, new_value))
 class DashboardApp:
     def __init__(self, root):
+        self.data_queue = queue.Queue()
+
+        ## SERVER ## 
+        self.host = "127.0.0.1"
+        self.port = 5555
+        self.server= None
+        # self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.client_socket.connect((self.server_host, self.server_port))
+        # self.refresh_data()
+
+        ## DATA QUEUES ## 
         self.root = root
         self.label = ttk.Label(root, text="Hello, Tkinter!")
         self.root.title("Firefighter Dashboard")
@@ -147,8 +158,22 @@ class DashboardApp:
         self.tab_record_gestures = ttk.Frame(self.notebook)
 
         self.notebook.add(self.tab1, text="Realtime Inference")
-        self.notebook.add(self.tab2, text="Realtime Firefighter Data")
-        self.notebook.add(self.tab_record_gestures, text="Record Gestures")
+        self.notebook.add(self.tab2, text="bash terminal")
+
+        # put a bash terminal in the second tab
+        self.bash_terminal = tk.Text(self.tab2)
+        self.bash_terminal.pack()
+        self.bash_terminal.insert(tk.END, "Welcome to the bash terminal\n")
+
+
+       
+
+        
+
+
+
+        # self.notebook.add(self.tab2, text="Realtime Firefighter Data")
+        # self.notebook.add(self.tab_record_gestures, text="Record Gestures")
 
         # Make the main notebook resizable
         self.tab1.columnconfigure(0, weight=1)
@@ -168,12 +193,37 @@ class DashboardApp:
             self.tab1.bind("<Configure>", correctly_resize)
             self.canvas_widget.pack(expand=True, fill=tk.BOTH)
         
-        self.server_host = "127.0.0.1"
-        self.server_port = 5555
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((self.server_host, self.server_port))
-        self.refresh_data()
 
+    
+        
+    def handle_client(self, client, addr):
+        try:
+            while True:
+                data = self.get_data_with_timestamp(addr)  # Include client address in the data
+                client.sendall(data.encode())
+                time.sleep(1)  # Simulate data update every 1 second
+        except ConnectionResetError:
+            print(f"Client {addr} disconnected")
+            client.close()
+    
+    def get_data_with_timestamp(self):
+        timestamp = time.time()
+        data_with_timestamp = {
+            "timestamp": timestamp,
+            "data": self.data
+        }
+        return json.dumps(data_with_timestamp)
+
+    def start_server(self):
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((self.host, self.port))
+        self.server.listen()
+        print(f"Server listening on {self.host}:{self.port}")
+        while True:
+            client, addr = self.server.accept()
+            print(f"Connected to {addr}")
+            client_handler = threading.Thread(target=self.handle_client, args=(client,))
+            client_handler.start()
 
         # l = self.render_firefighter_data()
 
@@ -227,7 +277,6 @@ class DashboardApp:
             firefighter_id = firefighter["id"]
             self.create_firefighter_widget(tab_frame, firefighter_id, firefighter)
             self.update_firefighter_widget(firefighter_id, firefighter)
-  
 
     def create_firefighter_widget(self, tab_frame, firefighter_id, firefighter_data):
         # Create and pack separator
@@ -242,31 +291,45 @@ class DashboardApp:
         self.firefighter_data[firefighter_id] = firefighter_data
 
         # Create view representation data and store it using firefighter_id as key
-        view_data = {
-            "name_var": tk.StringVar(value=firefighter_data["name"]),
-            "id": tk.StringVar(frame, value=firefighter_data["id"]),
-            "location_var": tk.StringVar(value=firefighter_data["location"]),
-            "gesture_var": tk.StringVar(value="None"),
-            "wifi_strength_var": tk.StringVar(value="None"),
-            "last_updated_var": tk.StringVar(value="None"),
-            "frame": frame
-        }
+        # automate making the view data
+        view_data = {}
+        for key, value in firefighter_data.items():
+            view_data[key + "_var"] = tk.StringVar(value=value)
+
+        view_data["frame"] = frame
+        # view_data = {
+        #     "name_var": tk.StringVar(value=firefighter_data["name"]),
+        #     "id_var": tk.StringVar(value=firefighter_data["id"]),
+        #     "location_var": tk.StringVar(value=firefighter_data["location"]),
+        #     "gesture_var": tk.StringVar(value=firefighter_data["gesture"]),
+        #     "wifi_strength_var": tk.StringVar(value=firefighter_data["wifi_strength"]),
+        #     "last_updated_var": tk.StringVar(value=firefighter_data["last_updated"]),
+        #     "ip_var": tk.StringVar(value=firefighter_data["ip"]),
+        #     "bt_id_var": tk.StringVar(value=firefighter_data["bt_id"]),
+        #     "tapstrap_connected_var": tk.StringVar(value=firefighter_data["tapstrap_connected"]),
+        #     "tapstrap_battery_var": tk.StringVar(value=firefighter_data["tapstrap_battery"]),
+        #     "frame": frame
+        # }
         self.view_data[firefighter_id] = view_data
 
         # Create and pack labels
-        labels = [
-            ("Name", view_data["name_var"]),
-            # ("ID", firefighter_id),
-            # ("ID", view_data["id"])
-            # ("IP", "123.456.789.0"),
-            # ("Bluetooth ID", "1234567890"),
-            # ("Tapstrap Connected", "True"),
-            # ("TapStrap Battery", "100%"),
-            ("Location", view_data["location_var"]),
-            ("Gesture", view_data["gesture_var"]),
-            ("Wifi Strength", view_data["wifi_strength_var"]),
-            ("Last Updated", view_data["last_updated_var"]),
-        ]
+        # labels = [
+        #     ("Name", view_data["name_var"]),
+        #     ("ID", view_data["id_var"]),
+        #     ("IP", view_data["ip_var"]),
+        #     ("Bluetooth ID", view_data["bt_id_var"]),
+        #     ("Tapstrap Connected", view_data["tapstrap_connected_var"]),
+        #     ("TapStrap Battery Percent", view_data["tapstrap_battery_var"]),
+        #     ("Location", view_data["location_var"]),
+        #     ("Gesture", view_data["gesture_var"]),
+        #     ("Wifi Strength", view_data["wifi_strength_var"]),
+        #     ("Last Updated", view_data["last_updated_var"]),
+        # ]
+        # automate the creation of the labels
+        labels = []
+        for key, value in view_data.items():
+            if "var" in key:
+                labels.append((key.replace("_var", ""), value))
         # for label_text, label_var in labels:
         #     label = tk.Label(frame, text=label_text + ": ", anchor="e")
         #     # label.pack(side=tk.LEFT, padx=5, pady=5)
@@ -289,10 +352,13 @@ class DashboardApp:
         treeview.heading("value", text=firefighter_data["name"])
         # Insert firefighter data as rows in the table
         for label_text, label_var in labels:
-            treeview.insert("", "end", values=(label_text, label_var.get()))
-
-            # Trace changes in the StringVar and update Treeview
-            label_var.trace("w", lambda *args, var=label_var, text=label_text: update_treeview(treeview, text, var))
+            if type(label_var) == tk.StringVar:
+                treeview.insert("", "end", values=(label_text, label_var.get()))
+                # Trace changes in the StringVar and update Treeview
+                label_var.trace("w", lambda *args, var=label_var, text=label_text: update_treeview(treeview, text, var))
+            # if label is a normal string then just add it to the treeview
+            # elif type(label_var) == str:
+            #     treeview.insert("", "end", values=(label_text, label_var))
 
 
         # for label_text, label_var in labels:
@@ -310,86 +376,63 @@ class DashboardApp:
         # for data in self.firefighter_data[firefighter_id]:
         #     view_data = self.view_data[firefighter_id]
 
-            
+        # check which fields are being updated
+        # for data in self.firefighter_data[firefighter_id]:
         # print("data", data)
         self.firefighter_data[firefighter_id].update(new_firefighter_data)
-
         # Update view representation data
         view_data = self.view_data[firefighter_id]
-        
-        view_data["gesture_var"].set(new_firefighter_data["gesture"])
+        # print("view data:\n",view_data)
+
+        # for key, value in view_data.items():
+        #     # check if the type is a stringvar
+        #     if type(value) == tk.StringVar:
+        #         view_data[key].set(value.get())
+
+        # for key, value in new_firefighter_data.items():
+        #     # if key in view_data:
+        #         view_data[key].set(value)
+
+        # view_data["gesture_var"].set(new_firefighter_data["gesture"])
         # view_data["wifi_strength_var"].set("Wifi Strength: " + new_firefighter_data["wifi_strength"])
+        # view_data["last_updated_var"].set("Last Updated: {} seconds ago".format(new_firefighter_data["last_updated"]))
         view_data["wifi_strength_var"].set(new_firefighter_data["wifi_strength"])
-        view_data["last_updated_var"].set(new_firefighter_data["last_updated"])
+        # list of view data row names
+        labels = [k for k in view_data.keys() if "var" in k]
+        for l in labels:
+            view_data[l].set(new_firefighter_data[l.replace("_var", "")])
+        # print("labels", labels)
+
+        # view_data["last_updated_var"].set(new_firefighter_data["last_updated"])
 
         # Apply color to wifi strength and last updated based on the values
         # self.apply_color_to_wifi_strength(firefighter_id)
     
-    def apply_color_to_wifi_strength(self, firefighter_id):
-        # Access view representation data
-        view_data = self.view_data[firefighter_id]
-        wifi_strength_var = view_data["wifi_strength_var"]
-        # get index of the wifi strength label
+    # def apply_color_to_wifi_strength(self, firefighter_id):
+        # # Access view representation data
+        # firefighter_view_data = self.view_data[firefighter_id]
+        # wifi_strength_var = firefighter_view_data["wifi_strength_var"]
+        # # get index of the wifi strength label
         
-        wifi_strength_label = view_data["frame"].winfo_children()[9]  # Assuming wifi strength label is the 5th widget
-        wifi_strength_value = wifi_strength_var.get()
-
-        # view_data = self.view_data[firefighter_id]
-        # wifi_strength_var = view_data["wifi_strength_var"]
-        # wifi_strength_label = view_data.get("wifi_strength_label")  # Retrieve the Wi-Fi strength label widget
+        # # wifi_strength_label = view_data["frame"].winfo_children()[9]  # Assuming wifi strength label is the 5th widget
+        # wifi_strength_value = wifi_strength_var.get()
+        # wifi_strength_label = firefighter_view_data["wifi_strength_var"]
 
 
-        # Apply color based on wifi strength value
-        if "Excellent" in wifi_strength_value:
-            wifi_strength_label.config(fg="green")
-        elif "Good" in wifi_strength_value:
-            wifi_strength_label.config(fg="blue")
-        elif "Fair" in wifi_strength_value:
-            wifi_strength_label.config(fg="orange")
-        elif "Poor" in wifi_strength_value:
-            wifi_strength_label.config(fg="red")
+        # # view_data = self.view_data[firefighter_id]
+        # # wifi_strength_var = view_data["wifi_strength_var"]
+        # # wifi_strength_label = view_data.get("wifi_strength_label")  # Retrieve the Wi-Fi strength label widget
 
 
-    # def create_firefighter_data_widgets(self, tab_frame):
-    #     self.rendered_firefighters = demo_firefighter_data# get_demo_firefighter_data()
-        
-    #     for firefighter in self.rendered_firefighters:
-    #         self.create_firefighter_widget(tab_frame, firefighter)
-    #         self.update_firefighter_widget(firefighter)
-    #         # self.apply_color_to_wifi_strength(firefighter)
-
-    # def create_firefighter_widget(self, tab_frame, firefighter):
-    #     divider = ttk.Separator(tab_frame, orient="horizontal")
-    #     divider.pack(fill="x")
-        
-    #     firefighter["gesture_var"] = tk.StringVar(value="None")
-    #     firefighter["wifi_strength_var"] = tk.StringVar(value="None")
-    #     firefighter["last_updated_var"] = tk.StringVar(value="None")
-    #     firefighter["frame"] = tk.Frame(tab_frame)
-    #     firefighter["frame"].pack()
-        
-    #     labels = [
-    #         ("Name", firefighter["name"]),
-    #         ("Location", firefighter["location"]),
-    #         ("Gesture", firefighter["gesture_var"]), # mutable variable
-    #         ("ID", firefighter["id"]),
-    #         ("Wifi Strength", firefighter["wifi_strength_var"]), # mutable variable
-    #         ("Last Updated", firefighter["last_updated_var"]) # mutable variable
-    #     ]
-        
-    #     for label_text, label_value in labels:
-    #         label = tk.Label(firefighter["frame"], text=label_text + ": ", anchor="e")
-    #         label.pack(side=tk.LEFT)
-    #         value_label = tk.Label(firefighter["frame"], textvariable=label_value)
-    #         value_label.pack(side=tk.LEFT)
-    #         firefighter[label_text.lower() + "_label"] = value_label
-
-    # def update_firefighter_widget(self, firefighter):
-    #     # Update dynamic values
-        
-    #     firefighter["gesture_var"].set(firefighter["gesture"])
-    #     firefighter["wifi_strength_var"].set("Wifi Strength: " + firefighter["wifi_strength"])
-    #     firefighter["last_updated_var"].set("Last Updated: {} seconds ago".format(firefighter["last_updated"]))
+        # # Apply color based on wifi strength value
+        # if "Excellent" in wifi_strength_value:
+        #     wifi_strength_label.config(fg="green")
+        # elif "Good" in wifi_strength_value:
+        #     wifi_strength_label.config(fg="blue")
+        # elif "Fair" in wifi_strength_value:
+        #     wifi_strength_label.config(fg="orange")
+        # elif "Poor" in wifi_strength_value:
+        #     wifi_strength_label.config(fg="red")
 
 
     # def apply_color_to_wifi_strength(self, firefighter):
@@ -447,10 +490,22 @@ class DashboardApp:
         # self.canvas.draw()
         # self.canvas_widget = self.canvas.get_tk_widget()
 
-        self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots()  
+        # plot a sine wave 
+        x = [i for i in range(10)]
+        y = [i**2 for i in range(10)]
+        self.ax.plot(x, y)
+
+
+        x2 = [i for i in range(10)]
+        y2 = [i**3 for i in range(10)]
+        self.ax.plot(x2, y2)
+
         self.canvas = FigureCanvasTkAgg(self.fig, master=tab_frame)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.grid(row=0, column=0, sticky="nsew")
+
+    
         # self.firefighter_labels = []
         # self.firefighter_data = []
 
@@ -586,7 +641,7 @@ class DashboardApp:
                 print("Connection to the server closed")
                 # try to reconnect
                 self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.client_socket.connect((self.server_host, self.server_port))
+                self.client_socket.connect((self.host, self.port))
                 # continue
                 # break
             self.update_labels([])
@@ -616,7 +671,7 @@ class DashboardApp:
         # self.strength_label.config(text=f"Bluetooth/Wi-Fi Strength: {strength}")
         # self.names_label.config(text=f"Firefighter Names: {names}")
         # self.locations_label.config(text=f"Firefighter Locations: {locations}")
-        # self.time_label.config(text=f"Time: {time.ctime()}")
+        self.time_label.config(text=f"Time: {time.ctime()}")
         # update firefighter data
         # self.render_firefighter_data()
         for firefighter in get_demo_firefighter_data():
@@ -631,6 +686,11 @@ class DashboardApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = DashboardApp(root)
+    # run server in a separate thread
+    server_thread = threading.Thread(target=app.start_server)
+    # run the thread in daemon mode so that it automatically stops when the main program exits
+    server_thread.daemon = True
+    server_thread.start()
     # run the receive_data method in a separate thread
     receive_data_thread = threading.Thread(target=app.receive_data)
     # run the thread in daemon mode so that it automatically stops when the main program exits

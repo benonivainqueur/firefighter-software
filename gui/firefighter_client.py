@@ -11,6 +11,10 @@ import os
 import subprocess
 import queue
 import threading
+# import library to get the current ip add
+import socket
+import os
+
 
 
 class Firefighter:
@@ -19,8 +23,9 @@ class Firefighter:
         self.location = location
         self.wifi_strength = "Excellent"
         self.wifi_network_name = "FirefighterNet"
-        self.ip = ''
-        self.port = 5555
+        self.ip = socket.gethostbyname(socket.gethostname())
+        self.server_ip = "127.0.0.1"
+        self.server_port = 5555
         self.id = id
         self.neighbors = []
         self.last_updated = time.time()
@@ -68,6 +73,20 @@ class Firefighter:
         return json.dumps(self.__dict__)
 
     ### WIFI/ BLUETOOTH FUNCTIONALITY
+
+    def get_wifi_strength(self):
+        # get the wifi strength
+        import subprocess
+
+        # Run the command to get the WiFi signal strength
+        command_output = subprocess.run(['iwconfig', 'wlan0'], capture_output=True, text=True)
+
+        # Extract the signal level from the command output
+        signal_level = [line for line in command_output.stdout.split('\n') if 'Signal level' in line]
+
+        # Print the signal level
+        print(signal_level) 
+        pass
 
     def route_wifi_data(self):
         # route wifi data to the server, or the nearest firefighter
@@ -124,23 +143,23 @@ def run_tapstrap_subprocess(file_path="realtime_inference.py", output_queue = No
 
         
 
-# class FirefighterClient:
-#     def __init__(self, server_ip, server_port):
-#         self.server_ip = server_ip
-#         self.server_port = server_port
-#         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         self.client.connect((self.server_ip, self.server_port))
-#         self.data = None
+class FirefighterClient:
+    def __init__(self, server_ip, server_port):
+        self.server_ip = server_ip
+        self.server_port = server_port
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.connect((self.server_ip, self.server_port))
+        self.data = None
 
-#     def get_data(self):
-#         self.data = self.client.recv(1024).decode()
-#         return self.data
+    def get_data(self):
+        self.data = self.client.recv(1024).decode()
+        return self.data
 
-#     def to_json(self):
-#         return json.dumps(self.__dict__)
+    def to_json(self):
+        return json.dumps(self.__dict__)
 
-#     def __str__(self):
-#         return f"Connected to {self.server_ip}:{self.server_port}"
+    def __str__(self):
+        return f"Connected to {self.server_ip}:{self.server_port}"
     
 
 if __name__ == "__main__":

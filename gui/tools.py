@@ -31,15 +31,34 @@ demo_firefighter_data = [
         
 
     },
-    {
-        "name": "Michael",
-        "location": "Building A, Floor 2",
-        "gesture": "None",
-        "id": 2,
-        "wifi_strength": "Bad",
-        "last_updated": "300 Seconds Ago",
+    # {
+    #     "name": "Michael",
+    #     "location": "Building A, Floor 2",
+    #     "gesture": "None",
+    #     "id": 2,
+    #     "wifi_strength": "Bad",
+    #     "last_updated": "300 Seconds Ago",
 
-    }
+    # },
+
+    #  {
+    #     "name": "Ben",
+    #     "location": "Building A, Floor 2",
+    #     "gesture": "None",
+    #     "id": 3,
+    #     "wifi_strength": "Bad",
+    #     "last_updated": "300 Seconds Ago",
+
+    # },
+    #    {
+    #     "name": "uh",
+    #     "location": "Building A, Floor 2",
+    #     "gesture": "None",
+    #     "id": 4,
+    #     "wifi_strength": "Bad",
+    #     "last_updated": "300 Seconds Ago",
+
+    # }
 
 ]
 def get_demo_firefighter_data():
@@ -54,6 +73,19 @@ def get_demo_firefighter_data():
             # randomize the wifi strength
             firefighter["wifi_strength"] = random.choice(["Excellent", "Good", "Fair", "Poor"])
             # randomize the gesture
-            firefighter["gesture"] = random.choice(["None", "Gesture 1", "Gesture 2", "Gesture 3"])
+            firefighter["gesture"] = random.choice(["0", "1", "2", "3","4"])
+            firefighter["ip"] = "100"
+            #   ("IP", view_data["ip"]),
+            # ("Bluetooth ID", view_data["bt_id"]),
+            # ("Tapstrap Connected", view_data["tapstrap_connected"]),
+            # ("TapStrap Battery Percent", view_data["tapstrap_battery"]),
+            # ("Location", view_data["location_var"]),
+            # ("Gesture", view_data["gesture_var"]),
+            # ("Wifi Strength", view_data["wifi_strength_var"]),
+            # ("Last Updated", view_data["last_updated_var"]),
+            firefighter["tapstrap_connected"] = random.choice(["True", "False", "other"])
+            firefighter["tapstrap_battery"] = random.randint(0, 100)
+            firefighter["bt_id"] = random.choice(["0", "1", "2", "3","4"])
+            firefighter["tapstrap_id"] = random.choice(["0", "1", "2", "3","4"])
         
         return demo_data

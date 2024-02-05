@@ -43,8 +43,17 @@ http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#SSH_remote_logi
 https://github.com/oblique/create_ap
 
 
-## Networking Linsk
+## Networking Links
 https://github.com/waterrmalann/NetworkBandwidthMonitor
 https://github.com/Goldent00thbrush/Bandwidth_Monitor
 https://openthread.io/guides/thread-primer
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7899530
+https://ieeexplore.ieee.org/document/8421863
+https://ieeexplore.ieee.org/document/8650222
+https://ieeexplore.ieee.org/document/6132771
+https://ieeexplore.ieee.org/document/7873617
+https://ieeexplore.ieee.org/document/5633776
+https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=BATMAN
+
+
 - Benoni Vainqueur 
