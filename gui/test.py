@@ -11,7 +11,10 @@ def get_wifi_signal_strength(interface_name):
             break
     print("Interface:", iface.name())
     iface.scan()
+    print("Scanning Wi-Fi networks...")
     results = iface.scan_results()
+    print("Scan results:", results)
+
 
     for result in results:
         if result.ssid == interface_name:
