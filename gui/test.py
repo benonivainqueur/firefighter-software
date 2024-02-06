@@ -4,6 +4,11 @@ from pywifi import const
 def get_wifi_signal_strength(interface_name):
     wifi = pywifi.PyWiFi()
     iface = wifi.interfaces() # Assuming there's only one Wi-Fi interface
+    # choose wlan0
+    for i in iface:
+        if i.name() == "wlan0":
+            iface = i
+            break
     print("Interface:", iface)
     iface.scan()
     results = iface.scan_results()
