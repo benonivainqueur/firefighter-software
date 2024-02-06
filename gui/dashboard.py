@@ -235,24 +235,25 @@ class DashboardApp:
             # client_handler.start()
 
     def handle_client(self, client, addr):
-        try:
-            while True:
-                # data = self.get_data_with_timestamp(addr)  # Include client address in the data
-                # client.sendall(data.encode())
-                # receive data from the client
-                # wait for data from the client
+        while True:
+            try:
                 
-                data = client.recv(1024).decode()
-                if data:
-                    print("Received data:", data)
-                    # self.firefighter_data_handler(data)
-                    firefighter = json.loads(data)
-                    self.update_firefighter_widget(firefighter["id"], new_firefighter_data=firefighter)
-                    self.refresh_data()
-                # time.sleep(1)  # Simulate data update every 1 second
-        except ConnectionResetError:
-            print(f"Client {addr} disconnected")
-            client.close()
+                    # data = self.get_data_with_timestamp(addr)  # Include client address in the data
+                    # client.sendall(data.encode())
+                    # receive data from the client
+                    # wait for data from the client
+                    
+                    data = client.recv(1024).decode()
+                    if data:
+                        print("Received data:", data)
+                        # self.firefighter_data_handler(data)
+                        firefighter = json.loads(data)
+                        self.update_firefighter_widget(firefighter["id"], new_firefighter_data=firefighter)
+                        self.refresh_data()
+                    # time.sleep(1)  # Simulate data update every 1 second
+            except ConnectionResetError:
+                print(f"Client {addr} disconnected")
+                client.close()
 
         # while True:
         #     try:

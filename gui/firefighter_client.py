@@ -51,7 +51,8 @@ class Firefighter:
         self.location = location
         self.wifi_strength = "Excellent"
         self.wifi_network_name = "FirefighterNet"
-        self.ip = socket.gethostbyname(socket.gethostname())
+        # self.ip = socket.gethostbyname(socket.gethostname())
+        self.ip = self.get_ip()
         # self.server_ip = "127.0.0.1"
         self.server_ip =  "192.168.0.30"
 
@@ -91,6 +92,12 @@ class Firefighter:
         #
         pass
 
+    def get_ip(self):
+        try:
+            self.ip = subprocess.run(['hostname', '-I'], capture_output=True, text=True).stdout.split(" ")[0]
+        except:
+            self.ip = "Error"
+
     #### TAPSTRAP FUNCTIONS ####
 
     def connect_to_tapstrap(self, tapstrap_id):
@@ -115,7 +122,7 @@ class Firefighter:
         # Run the command to get the WiFi signal strength
         # command_output = subprocess.run(['iwconfig', 'wlan0'], capture_output=True, text=True)
         command_output = subprocess.run(['iw', 'dev', 'wlan0', 'link'], capture_output=True, text=True)
-
+      
         "iw dev wlan0 link"
         # Extract the signal level from the command output
         signal_level = [line for line in command_output.stdout.split('\t') if len(line) > 0]
