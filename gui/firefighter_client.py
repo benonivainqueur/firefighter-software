@@ -118,7 +118,7 @@ class Firefighter:
 
         "iw dev wlan0 link"
         # Extract the signal level from the command output
-        signal_level = [line for line in command_output.stdout.split('\t') if len(line) > 0]
+        signal_level = [line for line in command_output.stdout.split('\t', '\n') if len(line) > 0]
 
         # Print the signal level
         print(signal_level) 
