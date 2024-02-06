@@ -118,8 +118,9 @@ class Firefighter:
 
         "iw dev wlan0 link"
         # Extract the signal level from the command output
-        signal_level = [line for line in command_output.stdout.split('\t', '\n') if len(line) > 0]
-
+        signal_level = [line for line in command_output.stdout.split('\t') if len(line) > 0]
+        # replace all the \n with a space
+        signal_level = [line.replace("\n", "") for line in signal_level]
         # Print the signal level
         print(signal_level) 
         self.wifi_strength = signal_level[5]
