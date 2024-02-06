@@ -66,6 +66,7 @@ class Firefighter:
         self.tapstrap_connected = "False"
         self.gesture = "None"
         self.connection_tree = {}
+        self.bit_rate ="None"
         # self.pc_name = os.environ['COMPUTERNAME']   # get the computer name
 
     def update_location(self, new_location):
@@ -117,11 +118,15 @@ class Firefighter:
 
         "iw dev wlan0 link"
         # Extract the signal level from the command output
-        signal_level = [line for line in command_output.stdout.split('\n') if len(line) > 0]
+        signal_level = [line for line in command_output.stdout.split('\t') if len(line) > 0]
 
         # Print the signal level
         print(signal_level) 
-        return signal_level[6]
+        self.wifi_strength = signal_level[5]
+        self.wifi_network_name = signal_level[1]
+        self.bit_rate = signal_level[6]
+
+        return signal_level[5]
         pass
 
     def route_wifi_data(self):
@@ -223,7 +228,7 @@ if __name__ == "__main__":
         # wait 1 second
         time.sleep(.5)
         f1.last_updated = time.time()
-        f1.wifi_strength = f1.get_wifi_strength()
+        f1.get_wifi_strength()
         client.send_data(f1.to_json())  
         time.sleep(.5)
         f2.last_updated = time.time()
