@@ -9,7 +9,7 @@ def get_wifi_signal_strength(interface_name):
         if i.name() == "wlan0":
             iface = i
             break
-    print("Interface:", iface)
+    print("Interface:", iface.name())
     iface.scan()
     results = iface.scan_results()
 
