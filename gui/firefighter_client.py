@@ -213,7 +213,7 @@ if __name__ == "__main__":
     #     print(output_queue.get())
 
     # # Create a firefighter client
-    client = FirefighterClient("127.0.0.1", "5555")  
+    client = FirefighterClient("192.168.0.30", "5555")  
     f1 = Firefighter(1, "John", "Building A, Floor 2")
     f2 = Firefighter(2, "Sarah", "Building B, Floor 32")
     while True:
