@@ -94,7 +94,8 @@ class Firefighter:
 
     def get_ip(self):
         try:
-            self.ip = subprocess.run(['hostname', '-I'], capture_output=True, text=True).stdout.split(" ")[0]
+            ip = subprocess.run(['hostname', '-I'], capture_output=True, text=True).stdout.split(" ")[0]
+            return ip
         except:
             self.ip = "Error"
 
