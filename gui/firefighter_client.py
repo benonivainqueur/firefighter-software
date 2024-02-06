@@ -52,7 +52,9 @@ class Firefighter:
         self.wifi_strength = "Excellent"
         self.wifi_network_name = "FirefighterNet"
         self.ip = socket.gethostbyname(socket.gethostname())
-        self.server_ip = "127.0.0.1"
+        # self.server_ip = "127.0.0.1"
+        self.server_ip =  "192.168.0.30"
+
         self.server_port = 5555
         self.id = id
         self.neighbors = []
@@ -213,12 +215,17 @@ if __name__ == "__main__":
     # # Create a firefighter client
     client = FirefighterClient("127.0.0.1", "5555")  
     f1 = Firefighter(1, "John", "Building A, Floor 2")
+    f2 = Firefighter(2, "Sarah", "Building B, Floor 32")
     while True:
         # wait 1 second
-        time.sleep(1)
+        time.sleep(.5)
         f1.last_updated = time.time()
         client.send_data(f1.to_json())  
+        time.sleep(.5)
+        f2.last_updated = time.time()
+        f2.neighbors = 1
+        client.send_data(f2.to_json())
         
         print(f"sent {len(f1.to_json())} bytes to the server")
         
-        print("sent data too server")      
+        # print("sent data too server")      

@@ -55,7 +55,9 @@ class DashboardApp:
         self.data_queue = queue.Queue()
 
         ## SERVER ## 
-        self.host = "127.0.0.1"
+        # self.host = "127.0.0.1"
+        self.host = "192.168.0.30"
+
         self.port = 5555
         self.server= None
         # self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
