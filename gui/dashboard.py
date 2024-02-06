@@ -196,15 +196,15 @@ class DashboardApp:
 
     
         
-    def handle_client(self, client, addr):
-        try:
-            while True:
-                data = self.get_data_with_timestamp(addr)  # Include client address in the data
-                client.sendall(data.encode())
-                time.sleep(1)  # Simulate data update every 1 second
-        except ConnectionResetError:
-            print(f"Client {addr} disconnected")
-            client.close()
+    # def handle_client(self, client, addr):
+    #     try:
+    #         while True:
+    #             data = self.get_data_with_timestamp(addr)  # Include client address in the data
+    #             client.sendall(data.encode())
+    #             time.sleep(1)  # Simulate data update every 1 second
+    #     except ConnectionResetError:
+    #         print(f"Client {addr} disconnected")
+    #         client.close()
     
     def get_data_with_timestamp(self):
         timestamp = time.time()
@@ -215,6 +215,7 @@ class DashboardApp:
         return json.dumps(data_with_timestamp)
 
     def start_server(self):
+        print("in start server")
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.server.listen()
@@ -222,9 +223,57 @@ class DashboardApp:
         while True:
             client, addr = self.server.accept()
             print(f"Connected to {addr}")
-            client_handler = threading.Thread(target=self.handle_client, args=(client,))
-            client_handler.start()
+            # data = self.server.recv(1024).decode()
+            # client_handler = threading.Thread(target=self.handle_client, args=(client, addr))
+            # client_handler.start()
+            handle_client_thread = threading.Thread(target=self.handle_client, args=(client, addr))
+            handle_client_thread.daemon = True
+            handle_client_thread.start()
+            # client_handler = threading.Thread(target=self.handle_client, args=(client,))
+            # client_handler.start()
 
+    def handle_client(self, client, addr):
+        try:
+            while True:
+                # data = self.get_data_with_timestamp(addr)  # Include client address in the data
+                # client.sendall(data.encode())
+                # receive data from the client
+                # wait for data from the client
+                
+                data = client.recv(1024).decode()
+                if data:
+                    print("Received data:", data)
+                    # self.firefighter_data_handler(data)
+                    firefighter = json.loads(data)
+                    self.update_firefighter_widget(firefighter["id"], new_firefighter_data=firefighter)
+                    self.refresh_data()
+                # time.sleep(1)  # Simulate data update every 1 second
+        except ConnectionResetError:
+            print(f"Client {addr} disconnected")
+            client.close()
+
+        # while True:
+        #     try:
+        #         data = self.server.recv(1024).decode()
+        #         print("Received data:", data)
+        #         # pass
+        #         # data_dict = json.loads(data)
+        #         self.refresh_data()
+        #     # catch all errors
+        #     except Exception as e:
+        #         print("Connection to the server closed")
+        #         # try to reconnect
+        #         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #         self.server.connect((self.host, self.port))
+        #         # continue
+        #         # break
+        #     self.update_labels([])
+            
+        #     data = self.client_socket.recv(1024).decode()
+        #     print("Received data:", data)
+        #     data_dict = json.loads(data)
+        #     self.update_labels(data_dict["data"])
+        #     self.refresh_data()
         # l = self.render_firefighter_data()
 
     # def create_firefighter_data_widgets(self, tab_frame):
@@ -269,9 +318,15 @@ class DashboardApp:
     
         # self.firefighter_data = {}  # Dictionary to store actual firefighter data
         # self.view_data = {}         # Dictionary to store view representation data
+    def get_firefighter_data(self): 
+        return self.firefighter_data
+        
+        
 
     def create_firefighter_data_widgets(self, tab_frame):
-        demo_firefighter_data = get_demo_firefighter_data()  # Assuming you have a function to get demo firefighter data
+        # demo_firefighter_data = get_demo_firefighter_data()  # Assuming you have a function to get demo firefighter data
+        # demo_firefighter_data = get_demo_firefighter_data()  # Assuming you have a function to get demo firefighter data
+        demo_firefighter_data = self.get_firefighter_data()  # Assuming you have a function to get demo firefighter data
         
         for firefighter in demo_firefighter_data:
             firefighter_id = firefighter["id"]
@@ -373,6 +428,12 @@ class DashboardApp:
     def update_firefighter_widget(self, firefighter_id, new_firefighter_data):
         # Update actual firefighter data
         print("firefighter id: ", firefighter_id)
+        # if the firefighter id is not in the firefighter data then add it
+        if firefighter_id not in self.firefighter_data:
+            self.firefighter_data[firefighter_id] = new_firefighter_data
+            self.create_firefighter_widget(self.tab_create_firefighter_data, firefighter_id, new_firefighter_data)
+            
+            # create the view data
         # for data in self.firefighter_data[firefighter_id]:
         #     view_data = self.view_data[firefighter_id]
 
@@ -404,79 +465,6 @@ class DashboardApp:
         # print("labels", labels)
 
         # view_data["last_updated_var"].set(new_firefighter_data["last_updated"])
-
-        # Apply color to wifi strength and last updated based on the values
-        # self.apply_color_to_wifi_strength(firefighter_id)
-    
-    # def apply_color_to_wifi_strength(self, firefighter_id):
-        # # Access view representation data
-        # firefighter_view_data = self.view_data[firefighter_id]
-        # wifi_strength_var = firefighter_view_data["wifi_strength_var"]
-        # # get index of the wifi strength label
-        
-        # # wifi_strength_label = view_data["frame"].winfo_children()[9]  # Assuming wifi strength label is the 5th widget
-        # wifi_strength_value = wifi_strength_var.get()
-        # wifi_strength_label = firefighter_view_data["wifi_strength_var"]
-
-
-        # # view_data = self.view_data[firefighter_id]
-        # # wifi_strength_var = view_data["wifi_strength_var"]
-        # # wifi_strength_label = view_data.get("wifi_strength_label")  # Retrieve the Wi-Fi strength label widget
-
-
-        # # Apply color based on wifi strength value
-        # if "Excellent" in wifi_strength_value:
-        #     wifi_strength_label.config(fg="green")
-        # elif "Good" in wifi_strength_value:
-        #     wifi_strength_label.config(fg="blue")
-        # elif "Fair" in wifi_strength_value:
-        #     wifi_strength_label.config(fg="orange")
-        # elif "Poor" in wifi_strength_value:
-        #     wifi_strength_label.config(fg="red")
-
-
-    # def apply_color_to_wifi_strength(self, firefighter):
-    #     # Access the label widget associated with the StringVar
-    #     wifi_strength_label = firefighter["wifi_strength_label"]
-
-    #     # Retrieve the value from "wifi_strength_var"
-    #     wifi_strength_var = firefighter["wifi_strength_var"]
-    #     wifi_strength_value = wifi_strength_var.get()
-
-    #     # Apply color based on the value
-    #     if "Excellent" in wifi_strength_value:
-    #         wifi_strength_label.config(fg="green")
-    #     elif "Good" in wifi_strength_value:
-    #         wifi_strength_label.config(fg="blue")
-    #     elif "Fair" in wifi_strength_value:
-    #         wifi_strength_label.config(fg="orange")
-    #     elif "Poor" in wifi_strength_value:
-    #         wifi_strength_label.config(fg="red")
-
-
-    #     # color code the timing of the last update, if it is more than 10 seconds ago, make it red
-    #     if firefighter["last_updated"] > 50:
-    #         firefighter["last_updated_var"].config(fg="red")
-    #     elif firefighter["last_updated"] > 20:
-    #         firefighter["last_updated_var"].config(fg="orange")
-    #     else:
-    #         firefighter["last_updated_var"].config(fg="green")
-    
-    # def update_firefighter_widgets(self, new_firefighter_data):
-    # # Assume new_firefighter_data is a list of dictionaries containing updated firefighter data
-    
-    #     for i, new_firefighter in enumerate(new_firefighter_data):
-    #         rendered_firefighter = self.rendered_firefighters[i]  # Get the corresponding rendered firefighter data
-            
-    #         # Update the StringVar objects with new data
-    #         rendered_firefighter["gesture_var"].set(new_firefighter["gesture"])
-    #         rendered_firefighter["wifi_strength_var"].set("Wifi Strength: " + new_firefighter["wifi_strength"])
-    #         rendered_firefighter["last_updated_var"].set("Last Updated: {} seconds ago".format(new_firefighter["last_updated"]))
-            # self.apply_color_to_wifi_strength(rendered_firefighter)
-        # Optionally, update other dynamic values in the widget if necessary
-        # apply_color_to_wifi_strength
-        # Optionally, apply any formatting or color changes based on the new data
-
 
 
     def create_matplotlib_plot(self, tab_frame):
@@ -515,6 +503,7 @@ class DashboardApp:
         # self.canvas_widget.grid(row=0, column=0, sticky="nsew")
         # self.firefighter_labels = []
         # self.firefighter_data = []
+
     ### TAB 3 FUNCTIONS ###
         
     def create_record_gestures_widgets(self, tab_frame):
@@ -551,50 +540,37 @@ class DashboardApp:
         self.recording_label.grid(row=3, column=1, padx=10, pady=5, sticky="we")
 
     def browse_folder(self):
-        self.folder_path = filedialog.askdirectory(initialdir=".", title="Select Gesture Folder")
-        print("Selected folder:", self.folder_path)
-        if self.folder_path:
-            self.folder_var.set(self.folder_path)
-            print(f"Selected folder: {self.folder_path}")
+        try: 
+            self.folder_path = filedialog.askdirectory(initialdir=".", title="Select Gesture Folder")
+            print("Selected folder:", self.folder_path)
+            if self.folder_path:
+                self.folder_var.set(self.folder_path)
+                print(f"Selected folder: {self.folder_path}")
+        except Exception as e:
+            print("Error selecting folder:", e)
+            print("Please select a folder")
 
     def record_gesture(self):
-        gesture_name = self.gesture_name_var.get()
-        print("GESTURE NAME:", gesture_name)
-        folder_path = self.folder_var.get()
-        print("folder path:", folder_path)
-        if gesture_name and folder_path and not self.recording:
-            self.recording = True
-            self.recording_text.set(f"Completed Recording Gesture in folder '{folder_path}'")
-            gesture_folder = os.path.join(folder_path, gesture_name)
-            print(f"Gesture '{gesture_name}' recorded in folder '{gesture_folder}'")
-        else:
-            self.recording_text.set("Not Recording")
-            print("Please enter both gesture name and select a folder.")
+        try: 
+            gesture_name = self.gesture_name_var.get()
+            print("GESTURE NAME:", gesture_name)
+            folder_path = self.folder_var.get()
+            print("folder path:", folder_path)
+            if gesture_name and folder_path and not self.recording:
+                self.recording = True
+                self.recording_text.set(f"Completed Recording Gesture in folder '{folder_path}'")
+                gesture_folder = os.path.join(folder_path, gesture_name)
+                print(f"Gesture '{gesture_name}' recorded in folder '{gesture_folder}'")
+            else:
+                self.recording_text.set("Not Recording")
+                print("Please enter both gesture name and select a folder.")
+        except Exception as e:
+            print("Error recording gesture:", e)
+            self.recording_text.set(f"Error: {e}")
 
     def stop_record_gesture(self):
         self.recording = False
         self.recording_text.set("Not Recording")
-
-
-        
-        # Create a grid of labels in tab 2
-        # self.render_firefighter_data()
-
-
-        # for idx, firefighter in enumerate(demo_firefighter_data):
-        #     firefighter_frame = tk.Frame(self.root)
-        #     firefighter_frame.grid(row=idx, column=0, padx=10, pady=5)
-            
-        #     name_label = tk.Label(firefighter_frame, text=firefighter["name"])
-        #     name_label.grid(row=0, column=0, padx=5, pady=5)
-            
-        #     gesture_label = tk.Label(firefighter_frame, textvariable=firefighter["gesture"])
-        #     gesture_label.grid(row=0, column=1, padx=5, pady=5)
-        
-        # make a grid that iterates over the firefighter objects and will display the data
-        # for firefighter in firefighters:
-        #     print(firefighter.name)
-        # Connect to the server
    
 
         # Start receiving data
@@ -628,29 +604,6 @@ class DashboardApp:
 
 
 
-    def receive_data(self):
-        while True:
-            try:
-                data = self.client_socket.recv(1024).decode()
-                print("Received data:", data)
-                # pass
-                # data_dict = json.loads(data)
-                self.refresh_data()
-            # catch all errors
-            except Exception as e:
-                print("Connection to the server closed")
-                # try to reconnect
-                self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.client_socket.connect((self.host, self.port))
-                # continue
-                # break
-            self.update_labels([])
-        
-            # data = self.client_socket.recv(1024).decode()
-            # print("Received data:", data)
-            # data_dict = json.loads(data)
-            # self.update_labels(data_dict["data"])
-            # self.refresh_data()
 
     def refresh_data(self):
         # self.client_socket.sendall("Refresh".encode())
@@ -687,15 +640,16 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = DashboardApp(root)
     # run server in a separate thread
+    # app.start_server()
     server_thread = threading.Thread(target=app.start_server)
     # run the thread in daemon mode so that it automatically stops when the main program exits
     server_thread.daemon = True
     server_thread.start()
     # run the receive_data method in a separate thread
-    receive_data_thread = threading.Thread(target=app.receive_data)
+    # receive_data_thread = threading.Thread(target=app.receive_data)
     # run the thread in daemon mode so that it automatically stops when the main program exits
-    receive_data_thread.daemon = True
-    receive_data_thread.start()
+    # receive_data_thread.daemon = True
+    # receive_data_thread.start()
     # run tk in main loop
 
     root.mainloop()

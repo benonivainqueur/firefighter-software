@@ -16,6 +16,34 @@ import socket
 import os
 
 
+def get_demo_firefighter_data():
+        import random
+        # Create a copy of the demo data
+        # print("Getting demo firefighter data")
+        demo_data = demo_firefighter_data.copy()
+        for firefighter in demo_data:
+            # update each time to a random value
+            # firefighter["last_updated"] = str(time.time()) # random number between 0 and 100
+            firefighter["last_updated"] = random.randint(0, 100)
+            # randomize the wifi strength
+            firefighter["wifi_strength"] = random.choice(["Excellent", "Good", "Fair", "Poor"])
+            # randomize the gesture
+            firefighter["gesture"] = random.choice(["0", "1", "2", "3","4"])
+            firefighter["ip"] = "100"
+            #   ("IP", view_data["ip"]),
+            # ("Bluetooth ID", view_data["bt_id"]),
+            # ("Tapstrap Connected", view_data["tapstrap_connected"]),
+            # ("TapStrap Battery Percent", view_data["tapstrap_battery"]),
+            # ("Location", view_data["location_var"]),
+            # ("Gesture", view_data["gesture_var"]),
+            # ("Wifi Strength", view_data["wifi_strength_var"]),
+            # ("Last Updated", view_data["last_updated_var"]),
+            firefighter["tapstrap_connected"] = random.choice(["True", "False", "other"])
+            firefighter["tapstrap_battery"] = random.randint(0, 100)
+            firefighter["bt_id"] = random.choice(["0", "1", "2", "3","4"])
+            firefighter["tapstrap_id"] = random.choice(["0", "1", "2", "3","4"])
+        
+        return demo_data
 
 class Firefighter:
     def __init__(self, id,name, location ):
@@ -30,8 +58,11 @@ class Firefighter:
         self.neighbors = []
         self.last_updated = time.time()
         self.counter = 0
+        self.tapstrap_battery = "100"
         self.tapstrap_id = 0
-        self.tapstrap_connected = False
+        self.bt_id = "0"
+        self.tapstrap_connected = "False"
+        self.gesture = "None"
         self.connection_tree = {}
         # self.pc_name = os.environ['COMPUTERNAME']   # get the computer name
 
@@ -148,7 +179,7 @@ class FirefighterClient:
         self.server_ip = server_ip
         self.server_port = server_port
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((self.server_ip, self.server_port))
+        self.client.connect((self.server_ip, int(self.server_port)))
         self.data = None
 
     def get_data(self):
@@ -161,17 +192,33 @@ class FirefighterClient:
     def __str__(self):
         return f"Connected to {self.server_ip}:{self.server_port}"
     
-
+    def send_data(self, data):
+        self.client.sendall(data.encode())
+    
+    firefighter1 = Firefighter(1,"John", "Building A, Floor 2" )
+    firefighter2 = Firefighter(2,"Sarah", "Building A, Floor 2" )
+    firefighter3 = Firefighter(3,"Michael", "Building A, Floor 2" )
 if __name__ == "__main__":
     # connect to the server
     # connect to tap strap 
     # run the realtime_inference.py file 
-    output_queue = queue.Queue()
-    process = run_tapstrap_subprocess("../tapstrap/realtime_inference.py", output_queue)
-    print("Subprocess exited with return code:", process.returncode)
+    # output_queue = queue.Queue()
+    # process = run_tapstrap_subprocess("../tapstrap/realtime_inference.py", output_queue)
+    # print("Subprocess exited with return code:", process.returncode)
 
-    # Print live output from the queue
-    while not output_queue.empty():
-        print(output_queue.get())
+    # # Print live output from the queue
+    # while not output_queue.empty():
+    #     print(output_queue.get())
 
+    # # Create a firefighter client
+    client = FirefighterClient("127.0.0.1", "5555")  
+    f1 = Firefighter(1, "John", "Building A, Floor 2")
+    while True:
+        # wait 1 second
+        time.sleep(1)
+        f1.last_updated = time.time()
+        client.send_data(f1.to_json())  
         
+        print(f"sent {len(f1.to_json())} bytes to the server")
+        
+        print("sent data too server")      
