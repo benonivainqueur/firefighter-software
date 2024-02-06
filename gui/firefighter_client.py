@@ -112,13 +112,16 @@ class Firefighter:
         import subprocess
 
         # Run the command to get the WiFi signal strength
-        command_output = subprocess.run(['iwconfig', 'wlan0'], capture_output=True, text=True)
+        # command_output = subprocess.run(['iwconfig', 'wlan0'], capture_output=True, text=True)
+        command_output = subprocess.run(['iw', 'dev', 'wlan0', 'link'], capture_output=True, text=True)
 
+        "iw dev wlan0 link"
         # Extract the signal level from the command output
-        signal_level = [line for line in command_output.stdout.split('\n') if 'Signal level' in line]
+        signal_level = [line for line in command_output.stdout.split('\n') if len(line) > 0]
 
         # Print the signal level
         print(signal_level) 
+        return signal_level
         pass
 
     def route_wifi_data(self):
@@ -220,6 +223,7 @@ if __name__ == "__main__":
         # wait 1 second
         time.sleep(.5)
         f1.last_updated = time.time()
+        f1.wifi_strength = f1.get_wifi_strength()
         client.send_data(f1.to_json())  
         time.sleep(.5)
         f2.last_updated = time.time()
