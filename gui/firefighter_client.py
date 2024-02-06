@@ -121,7 +121,7 @@ class Firefighter:
 
         # Print the signal level
         print(signal_level) 
-        return signal_level
+        return signal_level[6]
         pass
 
     def route_wifi_data(self):
