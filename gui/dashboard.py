@@ -247,9 +247,12 @@ class DashboardApp:
                     if data:
                         print("Received data:", data)
                         # self.firefighter_data_handler(data)
-                        firefighter = json.loads(data)
-                        self.update_firefighter_widget(firefighter["id"], new_firefighter_data=firefighter)
-                        self.refresh_data()
+                        try: 
+                            firefighter = json.loads(data)
+                            self.update_firefighter_widget(firefighter["id"], new_firefighter_data=firefighter)
+                            self.refresh_data()
+                        except Exception as e:
+                            print("Error in updating firefighter widget", e)
                     # time.sleep(1)  # Simulate data update every 1 second
             except ConnectionResetError:
                 print(f"Client {addr} disconnected")
