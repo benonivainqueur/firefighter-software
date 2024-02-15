@@ -25,7 +25,97 @@ import sys
 pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
 pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
 
-def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None, normalize=False):
+def on_linux():
+    import platform
+    if platform.system() == "Linux":
+        return True
+    else:
+        return False
+
+def rolling_feature_extraction(new_dataframe, use_label, interpolated = False, normalize=False,assign_label=None):
+    # supress warnings
+    features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
+                'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
+
+    fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
+    if interpolated:
+        imu_features = ['thumb_imu_x', 'thumb_imu_y', 'thumb_imu_z', 'thumb_imu_pitch', 'thumb_imu_yaw', 'thumb_imu_roll']
+
+        features = imu_features +  ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
+                'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z'] 
+
+    # Average acceleration per axis
+    
+    new_df = pd.DataFrame()
+    new_df = new_dataframe[features]
+    rolling_data_frames = []
+    # print("num nans:", new_df.isnull().sum().sum())
+    cols = new_df.columns.tolist()
+    window_size = 15
+
+    if normalize:
+        new_dataframe[features] = new_dataframe[features].apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+    for feature in features:
+        new_df['{}_rolling_mean'.format(feature)] = new_df[feature].rolling(window=window_size).mean()
+        new_df['{}_rolling_std'.format(feature)] = new_df[feature].rolling(window=window_size).std()
+        new_df['{}_rolling_variance'.format(feature)] = new_df[feature].rolling(window=window_size).var()
+        new_df['{}_rolling_derivative'.format(feature)] = new_df['{}'.format(feature)].diff()
+    
+
+
+    if(use_label):
+        new_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
+    
+    if (assign_label != None ):
+        new_df['label'] = assign_label
+    # drop first n rows where n is the window size
+    new_df = new_df[window_size:]
+
+    # table(data_df)
+    # print('SHAPE:', data_df.shape)
+    return new_df
+
+
+
+def reshape_data(data, window_size, use_label = False):
+    window_size = 100  # Define the window size for each sequence
+    # num_features = len(data[0].columns) 
+    
+    # data = list_of_dataframes[0]
+    sequences = []
+    labels = []
+    # d = pd.DataFrame()
+    # print(len(list_of_dataframes))
+
+    # for l in list_of_dataframes[0:1000:50]: # check in the first 100 rows, every 10th row
+        # d = pd.concat([d, l], ignore_index=True)
+
+    # data = d
+    if use_label:
+        for i in range(len(data) - window_size):
+                sequence = data.iloc[i:i+window_size].values # using .values to convert the dataframe to a numpy array
+                # drop the label column
+                sequence = sequence[:, :-1]
+                sequences.append(sequence)
+                # Assuming the last column is the target variable
+                if(use_label):
+                    labels.append(data.iloc[i+window_size][-1])
+
+        sequences = np.array(sequences)
+        labels = np.array(labels)
+        return sequences, labels
+       
+    else: 
+        for i in range(len(data) - window_size):
+                sequence = data.iloc[i:i+window_size].values
+                sequences.append(sequence)
+        sequences = np.array(sequences)
+        labels = np.array(labels)
+        return sequences
+
+ 
+
+def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None, normalize=False, speedup_multiplier = 1):
     features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
 
@@ -123,9 +213,15 @@ def feature_extraction(new_dataframe, use_label, interpolated = False, assign_la
     data_df = pd.concat([variance_df,skew_df,kurtosis_df,avg_accel_df, std_dev_accel_df, avg_abs_diff_accel_df, time_between_peaks_df, avg_accel_mag_df, avg_jerk_df], axis=1)
     if(use_label):
         data_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
-        if (assign_label != None ):
-            data_df['label'] = assign_label
+    if (assign_label != None ):
+        data_df['label'] = assign_label
 
+    
+    if (speedup_multiplier > 1):
+        # print("Speedup Multiplier: ", speedup_multiplier)
+        # print("Old Shape: ", data_df.shape)
+        data_df = data_df.iloc[::speedup_multiplier, :] # speed up the data by taking every nth row
+        # print("New Shape: ", data_df.shape)
     # table(data_df)
     # print('SHAPE:', data_df.shape)
     return data_df
@@ -141,19 +237,21 @@ def merge_packets(packets, prexisting=False, remove_label=False, collecting_data
     accl_packets = [p for p in packets if p['type'] == 'accl']
     imu_packets = [p for p in packets if p['type'] == 'imu']
     merged_packets = []
-
-    for accl_packet in accl_packets:
-        closest_imu = min(imu_packets, key=lambda imu: abs(imu['ts'] - accl_packet['ts']))
-        merged_payload = closest_imu['payload'] + accl_packet['payload']
-        if(prexisting):
-            merged_packets.append({"timestamp": accl_packet['ts'], "payload": merged_payload, "label": accl_packet['label']})
-        elif(remove_label):
-            merged_packets.append({"ts": accl_packet['ts'], "payload": merged_payload})
-        elif(collecting_data):
-            merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload})
-        else:
-            merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload, 'label': accl_packet['label']})
-    return merged_packets
+    try:
+        for accl_packet in accl_packets:
+            closest_imu = min(imu_packets, key=lambda imu: abs(imu['ts'] - accl_packet['ts']))
+            merged_payload = closest_imu['payload'] + accl_packet['payload']
+            if(prexisting):
+                merged_packets.append({"timestamp": accl_packet['ts'], "payload": merged_payload, "label": accl_packet['label']})
+            elif(remove_label):
+                merged_packets.append({"ts": accl_packet['ts'], "payload": merged_payload})
+            elif(collecting_data):
+                merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload})
+            else:
+                merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload, 'label': accl_packet['label']})
+        return merged_packets
+    except Exception as e:
+        print("Error: ", e)
 
 '''
     takes a accel file name, and imu file name, and merges them together
@@ -247,12 +345,45 @@ test_packets = [{'type': 'accl', 'ts': 5711184, 'payload': [0, 12, -29, -32, 2, 
                 {'type': 'accl', 'ts': 5711200, 'payload': [0, 11, -29, -32, 2, -7, -32, 2, -2, -32, 0, 5, -32, 1, 4]}]
 
 # interpolate_preexisting_data()
+from tapsdk.models import AirGestures
+from tapsdk import TapSDK, TapInputMode
+import asyncio
+import logging 
+from bleak import _logger as logger
+
+async def connect_to_tapstrap(loop,callback,timeout=100):
+    print("Connecting to Tap Strap")
+    l = logging.getLogger("asyncio")
+    l.setLevel(logging.DEBUG)
+    h = logging.StreamHandler(sys.stdout)
+    h.setLevel(logging.INFO)
+    l.addHandler(h)
+    logger.addHandler(h)
+
+    client = TapSDK(loop)
+    devices = await client.list_connected_taps()
+    print("devices",devices)
+    x = await client.manager.connect_retrieved()
+    x = await client.manager.is_connected()
+    logger.info("Connected: {0}".format(x))
+
+    await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
+    await client.register_raw_data_events(callback)
+    await client.send_vibration_sequence([100,100,100])
+    await asyncio.sleep(timeout, True) # this line  is to keep the program running for 50 seconds
+
+    
+
+
+    # connect to the tapstrap
+    pass
+
 
 if __name__ == "__main__":
     pass
 
 
-'''
+''' 
     this function will use tabulate to print out a table
     input: dataframe
     output: table

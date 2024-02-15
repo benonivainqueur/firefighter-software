@@ -19,9 +19,19 @@ import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
 import time
-from tools import feature_extraction, table
+from tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data
 # from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap_interpolated import merge_packets
+from tools import connect_to_tapstrap
+
+
+# on_linux = False
+# # use os package to determine if we are on a form of linux
+# on_linux = on_linux()
+
+# check if we are on ubuntu
+
+    
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 
 # List to hold features
@@ -53,19 +63,77 @@ def perform_inference(df):
     # drop nans from the dataframe
     # try catch
     predictions = []
-    try: 
+    # try: 
+
+    
+    if lstm: 
         df = df.dropna()
+        df = reshape_data(df, window_size=100, use_label=False)
+        # print("df shape", df)
+        start = time.time()
+        try:
+            predictions = loaded_model.predict(df)
+       
+            end = time.time()
+            inf_time = end - start
+            # use three decimal places
+            # inf_time = round(inf_time, 3)
+            print(inf_time,"s")
+            print("sparse", predictions)
+            print("predictions",  np.argmax(predictions, axis=1))
+            # print("raw predictions", predictions)
+            # print("pred " ,predictions[0])
+            pred = predictions[0]
+            max = -100
+            max_index = -1
+            for i in range(len(pred)):
+                if pred[i] > max:
+                    max = pred[i]
+                    max_index = i
+            
+            # predictions
+        except Exception as e:
+            print(e)
+            print("error in inference")
+        # print("max index", max_index)
+
+        
+
+        # print("argmax", np.argmax(pred))
+
+
+        # predictions = np.argmax(predictions[0])
+        # get index of max value
+        # for i in range(len(predictions)):
+        #     predictions[i] = np.argmax(predictions[i])
+        # predictions = np.bincount(predictions).argmax()
+        # print("predictions:", predictions, "shape", predictions.shape())
+        # print("pred",predictions)
+        # print(" most likely prediction", np.bincount(predictions).argmax())
+        # return predictions
+        # time.sleep(2)
+
+    else: 
+        # start timer to see how long it takes to perform inference
+        df = df.fillna(0)        
+        start = time.time()
         predictions = loaded_model.predict(df)
-        print("predictions:", predictions)
-    except Exception as e:
-        # print(e)
-        print("error in inference")
+        end = time.time()
+        inf_time = end - start
+        # use three decimal places
+        inf_time = round(inf_time, 3)
+        
+        print("predictions:", predictions, "inf_time:", inf_time,"s")
+
+    # except Exception as e:
+    #     print(e)
+    #     print("error in inference")
     if len(predictions) == 0:
         return -1
     else: 
         return predictions[0]
     
-        
+   
 
 # def on_raw_data_no_thumb(identifier, packets):
 #     if  (on_raw_data.accel_cnt >= 200 or on_raw_data.imu_cnt >= 200):
@@ -111,16 +179,20 @@ def on_raw_data(identifier, packets):
         # print("performing inference")
         if use_thumb:
             new_df = process_interpolated_data(timestamped_interpolated_values)
-            feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+            if (lstm == True):
+                feature_df = rolling_feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+            else:  
+                feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
             int = perform_inference(feature_df)
-            if (int == 1 and client != None):
-                print("vibrate")
+            # if (int == 1 and client != None):
+            #     print("vibrate")
             reset_arrays()
         else:
-            new_df = process_accelerometer_data(timestamped_accel_values)
-            feature_df = feature_extraction(new_df, use_label=False, normalize=True)
-            val = perform_inference(feature_df)
-            reset_arrays()
+            # new_df = process_accelerometer_data(timestamped_accel_values)
+            # feature_df = feature_extraction(new_df, use_label=False, normalize=True)
+            # val = perform_inference(feature_df)
+            # reset_arrays()
+            pass
     else: 
         # print("appending to arrays")
         ip = merge_packets(packets,False,remove_label=use_thumb)
@@ -140,33 +212,29 @@ def on_raw_data(identifier, packets):
                     on_raw_data.accel_cnt += 1
 
 
-async def run(loop, debug=False):
-    print("beginning run looop")
-    if debug:
-        # loop.set_debug(True)
-        l = logging.getLogger("asyncio")
-        l.setLevel(logging.DEBUG)
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(logging.INFO)
-        l.addHandler(h)
-        logger.addHandler(h)
+# async def run(loop, debug=False):
+#     print("beginning run looop")
+#     if debug:
+#         # loop.set_debug(True)
+#         l = logging.getLogger("asyncio")
+#         l.setLevel(logging.DEBUG)
+#         h = logging.StreamHandler(sys.stdout)
+#         h.setLevel(logging.INFO)
+#         l.addHandler(h)
+#         logger.addHandler(h)
 
-    client = TapSDK(loop)
-    # devices = await client.list_connected_taps()
-    x = await client.manager.connect_retrieved()
-    x = await client.manager.is_connected()
-    logger.info("Connected: {0}".format(x))
-    # await client.set_input_mode(TapInputMode("controller"))
-    # await client.register_mouse_events(OnMoused)
-    # await client.register_air_gesture_state_events(OnMouseModeChange)
-    # await asyncio.sleep(3)
+#     client = TapSDK(loop)
+#     # devices = await client.list_connected_taps()
+#     x = await client.manager.connect_retrieved()
+#     x = await client.manager.is_connected()
+#     logger.info("Connected: {0}".format(x))
 
-    await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
-    await client.register_raw_data_events(on_raw_data)
-    await client.send_vibration_sequence([100,100,100])
-    # await asyncio.sleep(3)
-    # await client.send_vibration_sequence([100, 200])
-    await asyncio.sleep(run_time, True) # this line  is to keep the program running for 50 seconds
+#     await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
+#     await client.register_raw_data_events(on_raw_data)
+#     await client.send_vibration_sequence([100,100,100])
+#     # await asyncio.sleep(3)
+#     # await client.send_vibration_sequence([100, 200])
+#     await asyncio.sleep(run_time, True) # this line  is to keep the program running for 50 seconds
 
 on_raw_data.imu_cnt = 0
 on_raw_data.accel_cnt = 0
@@ -175,7 +243,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 150 # how many readings we need to perform feature extraction and inference
+polling_window = 50 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
@@ -188,18 +256,32 @@ if __name__ == "__main__":
     # models = ["KNeighborsClassifier", "LogisticRegression", "RandomForestClassifier", "SVC"]
     models = os.listdir(current_dir + "/models/")
     # remove .DS_Store from the list
-    models.remove(".DS_Store")
+    try:
+        models.remove(".DS_Store")
+    except:
+        pass
+
     # use list comprehension to map a index to a model name 
     model_tuples = [(models[i], i) for i  in range(len(models))]
     # take input, 1 for KNN, 2 for Logistic Regression, 3 for Random Forest, 4 for SVM
     model_num = input("Enter model number. {models}:".format(models=model_tuples))
-    model_path = 'tapstrap/models/{m}'.format(m = model_tuples[int(model_num)][0])
+    model_path = current_dir+'/models/{m}'.format(m = model_tuples[int(model_num)][0])
     print("Using model: {m}".format(m = model_tuples[int(model_num)][0]))
-    loaded_model = joblib.load(model_path)
-    # # load in model
+    
+    # check if the model is an lstm
+    lstm = False
+    if "lstm" in model_path:
+        lstm = True
+        # load the lstm model
+        from keras.models import load_model
+        loaded_model = load_model(model_path)
+    else:
+        # load the model
+        loaded_model = joblib.load(model_path)
     try:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run(loop, True))
+        loop.run_until_complete(connect_to_tapstrap(loop,on_raw_data,100))
+        # loop.run_until_complete(run(loop, True))
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         loop.close()

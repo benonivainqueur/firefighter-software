@@ -3,8 +3,8 @@ venv/
 .idea/
 .DS_Store
 **/.ipynb_checkpoints/
-# **/node_modules/
-
+**/node_modules/
+*__pycache__/
 *.txt
 *.log
 *.plog
