@@ -9,3 +9,5 @@ venv/
 *.log
 *.plog
 *.csv
+
+**/__pycache__/
