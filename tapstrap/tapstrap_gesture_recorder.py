@@ -155,7 +155,8 @@ def record_data():
     #         # folder_count[folder_name] = 0
     #         # label_tuples[folder_name] = 0
     old_gesture_name = ''
-    auto_mode = False
+    auto_mode = True
+    gesture_name = 'd'
     print("Type 'auto' and your gesture name following it to enable auto mode... 'auto wave' for example")
     while True:
         # if (not automate_collection):
@@ -166,7 +167,7 @@ def record_data():
             gesture_name = old_gesture_name
         else:
             old_gesture_name = gesture_name
-        # gesture_name = 'lever'
+        
         if 'auto' in gesture_name.lower() :
             auto_mode = True
             gesture_name = gesture_name.split(' ')[1]
@@ -205,6 +206,10 @@ def record_data():
                 if OnRawData.imu_cnt % 5 == 0:
                     print("Recording...", OnRawData.imu_cnt)
                 time.sleep(0.1)
+                # stop recording after 100 entries 
+                if OnRawData.imu_cnt > 100:
+                    is_recording = False
+                    
             # if the owrd turn is in the gesture name, then set the label to 1
             # label = label_tuples[gesture_name.lower()]
             # base_path = './interpolated_data'

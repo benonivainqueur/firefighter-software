@@ -19,13 +19,14 @@ import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
 import time
-from tools import feature_extraction, table, get_platform
+from tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data
 # from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap_interpolated import merge_packets
 
-on_linux = False
-# use os package to determine if we are on a form of linux
-on_linux = get_platform()
+# on_linux = False
+# # use os package to determine if we are on a form of linux
+# on_linux = on_linux()
+
 # check if we are on ubuntu
 
     
@@ -60,19 +61,57 @@ def perform_inference(df):
     # drop nans from the dataframe
     # try catch
     predictions = []
-    try: 
-        df = df.dropna()
+    # try: 
+    df = df.fillna(0)        
+    
+    if lstm: 
+        df = reshape_data(df, window_size=100, use_label=False)
+        # print("df shape", df)
+        predictions = loaded_model.predict(df)
+        print("sparse", predictions)
+        print("predictions",  np.argmax(predictions, axis=1))
+        # print("raw predictions", predictions)
+        # print("pred " ,predictions[0])
+        pred = predictions[0]
+        max = -100
+        max_index = -1
+        for i in range(len(pred)):
+            if pred[i] > max:
+                max = pred[i]
+                max_index = i
+        
+        predictions
+        # print("max index", max_index)
+
+        
+
+        # print("argmax", np.argmax(pred))
+
+
+        # predictions = np.argmax(predictions[0])
+        # get index of max value
+        # for i in range(len(predictions)):
+        #     predictions[i] = np.argmax(predictions[i])
+        # predictions = np.bincount(predictions).argmax()
+        # print("predictions:", predictions, "shape", predictions.shape())
+        # print("pred",predictions)
+        # print(" most likely prediction", np.bincount(predictions).argmax())
+        # return predictions
+        # time.sleep(2)
+
+    else: 
         predictions = loaded_model.predict(df)
         print("predictions:", predictions)
-    except Exception as e:
-        # print(e)
-        print("error in inference")
+
+    # except Exception as e:
+    #     print(e)
+    #     print("error in inference")
     if len(predictions) == 0:
         return -1
     else: 
         return predictions[0]
     
-        
+   
 
 # def on_raw_data_no_thumb(identifier, packets):
 #     if  (on_raw_data.accel_cnt >= 200 or on_raw_data.imu_cnt >= 200):
@@ -118,16 +157,20 @@ def on_raw_data(identifier, packets):
         # print("performing inference")
         if use_thumb:
             new_df = process_interpolated_data(timestamped_interpolated_values)
-            feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+            if (lstm == True):
+                feature_df = rolling_feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+            else:  
+                feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
             int = perform_inference(feature_df)
-            if (int == 1 and client != None):
-                print("vibrate")
+            # if (int == 1 and client != None):
+            #     print("vibrate")
             reset_arrays()
         else:
-            new_df = process_accelerometer_data(timestamped_accel_values)
-            feature_df = feature_extraction(new_df, use_label=False, normalize=True)
-            val = perform_inference(feature_df)
-            reset_arrays()
+            # new_df = process_accelerometer_data(timestamped_accel_values)
+            # feature_df = feature_extraction(new_df, use_label=False, normalize=True)
+            # val = perform_inference(feature_df)
+            # reset_arrays()
+            pass
     else: 
         # print("appending to arrays")
         ip = merge_packets(packets,False,remove_label=use_thumb)
@@ -182,7 +225,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 150 # how many readings we need to perform feature extraction and inference
+polling_window = 50 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
@@ -195,14 +238,28 @@ if __name__ == "__main__":
     # models = ["KNeighborsClassifier", "LogisticRegression", "RandomForestClassifier", "SVC"]
     models = os.listdir(current_dir + "/models/")
     # remove .DS_Store from the list
-    models.remove(".DS_Store")
+    try:
+        models.remove(".DS_Store")
+    except:
+        pass
+
     # use list comprehension to map a index to a model name 
     model_tuples = [(models[i], i) for i  in range(len(models))]
     # take input, 1 for KNN, 2 for Logistic Regression, 3 for Random Forest, 4 for SVM
     model_num = input("Enter model number. {models}:".format(models=model_tuples))
-    model_path = 'tapstrap/models/{m}'.format(m = model_tuples[int(model_num)][0])
+    model_path = current_dir+'/models/{m}'.format(m = model_tuples[int(model_num)][0])
     print("Using model: {m}".format(m = model_tuples[int(model_num)][0]))
-    loaded_model = joblib.load(model_path)
+    
+    # check if the model is an lstm
+    lstm = False
+    if "lstm" in model_path:
+        lstm = True
+        # load the lstm model
+        from keras.models import load_model
+        loaded_model = load_model(model_path)
+    else:
+        # load the model
+        loaded_model = joblib.load(model_path)
     # # load in model
     try:
         loop = asyncio.get_event_loop()
