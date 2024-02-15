@@ -12,7 +12,6 @@ import json
 
 from tapsdk import TapSDK, TapInputMode
 from tapsdk.models import AirGestures
-
 import os
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 import asyncio
@@ -21,6 +20,9 @@ import logging
 from bleak import _logger as logger
 import sys
 import json
+import time
+from .tools import  merge_packets
+
 global is_recording
 is_recording = False
 
@@ -47,8 +49,7 @@ def get_label():
     return label
 
 # lets make a timer to measure how much time passes between each time OnRawData is called
-import time
-from tools import  merge_packets
+
 
 time_differences = []
 # Modify the OnRawData function to include interpolation

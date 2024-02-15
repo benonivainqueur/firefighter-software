@@ -10,9 +10,9 @@ from tkinter import filedialog
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import sys
-import __init__
+# import __init__
 # print(sys.path)import sys
-# sys.path.append( sys.path[0] + "/..")
+sys.path.append( sys.path[0] + "/..")
 
 from tapstrap.tools import connect_to_tapstrap
 

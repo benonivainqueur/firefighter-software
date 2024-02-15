@@ -2,16 +2,16 @@ from joblib import load
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import joblib
-import threading
+# import threading
 from tapsdk import TapSDK, TapInputMode
 from tapsdk.models import AirGestures
 import os
 import asyncio
-import platform
-import logging
+# import platform
+# import logging
 from bleak import _logger as logger
-import sys
-import json
+# import sys
+# import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
@@ -19,11 +19,13 @@ import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
 import time
-from tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data
+from .tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data
 # from tapstrap_gesture_recorder import average_and_create_payload
-from tapstrap_interpolated import merge_packets
-from tools import connect_to_tapstrap
-
+from .tapstrap_interpolated import merge_packets
+from .tools import connect_to_tapstrap
+import queue
+global shared_queue 
+shared_queue = queue.Queue(maxsize=10)
 
 # on_linux = False
 # # use os package to determine if we are on a form of linux
@@ -60,11 +62,7 @@ def process_interpolated_data(interpolated_data):
     The returned value is the prediction as a integer
 '''
 def perform_inference(df):
-    # drop nans from the dataframe
-    # try catch
     predictions = []
-    # try: 
-
     
     if lstm: 
         df = df.dropna()
@@ -90,18 +88,12 @@ def perform_inference(df):
                 if pred[i] > max:
                     max = pred[i]
                     max_index = i
-            
-            # predictions
         except Exception as e:
             print(e)
             print("error in inference")
         # print("max index", max_index)
 
-        
-
         # print("argmax", np.argmax(pred))
-
-
         # predictions = np.argmax(predictions[0])
         # get index of max value
         # for i in range(len(predictions)):
@@ -122,7 +114,6 @@ def perform_inference(df):
         inf_time = end - start
         # use three decimal places
         inf_time = round(inf_time, 3)
-        
         print("predictions:", predictions, "inf_time:", inf_time,"s")
 
     # except Exception as e:
@@ -183,7 +174,8 @@ def on_raw_data(identifier, packets):
                 feature_df = rolling_feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
             else:  
                 feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
-            int = perform_inference(feature_df)
+            inference = perform_inference(feature_df)
+            shared_queue.put((inference,time.time()))
             # if (int == 1 and client != None):
             #     print("vibrate")
             reset_arrays()
@@ -245,8 +237,21 @@ timestamped_imu_values = []
 timestamped_interpolated_values = []
 polling_window = 50 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
-if __name__ == "__main__":
+
+# 
+def main(headless = False):
+   
+   
     # print current directory
+    while True:
+        # print("hello!")
+        shared_queue.put(("0",time.time()))
+        # shared_queue.put(time.time())
+        # put in delay 
+        time.sleep(1)
+        # put time in queue 
+        
+    # time.sleep(1)
     print(os.getcwd())
     use_thumb = True # decides whether or not to use the thumb in the feature extraction
     run_time = 200.0 # how long the program will run for
@@ -256,15 +261,15 @@ if __name__ == "__main__":
     # models = ["KNeighborsClassifier", "LogisticRegression", "RandomForestClassifier", "SVC"]
     models = os.listdir(current_dir + "/models/")
     # remove .DS_Store from the list
-    try:
+    if ".DS_Store" in models:
         models.remove(".DS_Store")
-    except:
-        pass
-
     # use list comprehension to map a index to a model name 
     model_tuples = [(models[i], i) for i  in range(len(models))]
-    # take input, 1 for KNN, 2 for Logistic Regression, 3 for Random Forest, 4 for SVM
-    model_num = input("Enter model number. {models}:".format(models=model_tuples))
+    if headless:
+       
+        model_num = 2
+    else: 
+        model_num = input("Enter model number. {models}:".format(models=model_tuples))
     model_path = current_dir+'/models/{m}'.format(m = model_tuples[int(model_num)][0])
     print("Using model: {m}".format(m = model_tuples[int(model_num)][0]))
     
@@ -288,5 +293,9 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
         loop.close()
+
+if __name__ == "__main__":
+    main()
+    
 
 
