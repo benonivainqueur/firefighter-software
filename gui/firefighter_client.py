@@ -14,6 +14,7 @@ import threading
 # import library to get the current ip add
 import socket
 import os
+from ..tapstrap.tools import connect_to_tapstrap as ct
 
 
 def get_demo_firefighter_data():
@@ -101,10 +102,13 @@ class Firefighter:
 
     #### TAPSTRAP FUNCTIONS ####
 
-    def connect_to_tapstrap(self, tapstrap_id):
+    def tapstrap_inference(self, tapstrap_id):
+        # we need to make a thread that runs the realtime_inference.py file
+        # we will use the subprocess module to run the file. We need to get the output of the file and send it to the server
         # connect to the tapstrap
         self.tapstrap_id = tapstrap_id
         self.tapstrap_connected = True
+        ct()
         pass
     
     def gesture_recognition(self):

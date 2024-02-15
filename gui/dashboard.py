@@ -9,7 +9,9 @@ import queue
 from tkinter import filedialog
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tools import get_demo_firefighter_data
+import __init__
+
+from gui_tools import get_demo_firefighter_data
 demo_firefighter_data = [
     {
         "name": "John",

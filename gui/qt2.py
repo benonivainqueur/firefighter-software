@@ -7,6 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from matplotlib import style
+import __init__
 
 import tkinter as tk
 from tkinter import ttk

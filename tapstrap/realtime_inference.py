@@ -22,6 +22,8 @@ import time
 from tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data
 # from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap_interpolated import merge_packets
+from tools import connect_to_tapstrap
+
 
 # on_linux = False
 # # use os package to determine if we are on a form of linux
@@ -62,25 +64,37 @@ def perform_inference(df):
     # try catch
     predictions = []
     # try: 
-    df = df.fillna(0)        
+
     
     if lstm: 
+        df = df.dropna()
         df = reshape_data(df, window_size=100, use_label=False)
         # print("df shape", df)
-        predictions = loaded_model.predict(df)
-        print("sparse", predictions)
-        print("predictions",  np.argmax(predictions, axis=1))
-        # print("raw predictions", predictions)
-        # print("pred " ,predictions[0])
-        pred = predictions[0]
-        max = -100
-        max_index = -1
-        for i in range(len(pred)):
-            if pred[i] > max:
-                max = pred[i]
-                max_index = i
-        
-        predictions
+        start = time.time()
+        try:
+            predictions = loaded_model.predict(df)
+       
+            end = time.time()
+            inf_time = end - start
+            # use three decimal places
+            # inf_time = round(inf_time, 3)
+            print(inf_time,"s")
+            print("sparse", predictions)
+            print("predictions",  np.argmax(predictions, axis=1))
+            # print("raw predictions", predictions)
+            # print("pred " ,predictions[0])
+            pred = predictions[0]
+            max = -100
+            max_index = -1
+            for i in range(len(pred)):
+                if pred[i] > max:
+                    max = pred[i]
+                    max_index = i
+            
+            # predictions
+        except Exception as e:
+            print(e)
+            print("error in inference")
         # print("max index", max_index)
 
         
@@ -100,8 +114,16 @@ def perform_inference(df):
         # time.sleep(2)
 
     else: 
+        # start timer to see how long it takes to perform inference
+        df = df.fillna(0)        
+        start = time.time()
         predictions = loaded_model.predict(df)
-        print("predictions:", predictions)
+        end = time.time()
+        inf_time = end - start
+        # use three decimal places
+        inf_time = round(inf_time, 3)
+        
+        print("predictions:", predictions, "inf_time:", inf_time,"s")
 
     # except Exception as e:
     #     print(e)
@@ -190,33 +212,29 @@ def on_raw_data(identifier, packets):
                     on_raw_data.accel_cnt += 1
 
 
-async def run(loop, debug=False):
-    print("beginning run looop")
-    if debug:
-        # loop.set_debug(True)
-        l = logging.getLogger("asyncio")
-        l.setLevel(logging.DEBUG)
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(logging.INFO)
-        l.addHandler(h)
-        logger.addHandler(h)
+# async def run(loop, debug=False):
+#     print("beginning run looop")
+#     if debug:
+#         # loop.set_debug(True)
+#         l = logging.getLogger("asyncio")
+#         l.setLevel(logging.DEBUG)
+#         h = logging.StreamHandler(sys.stdout)
+#         h.setLevel(logging.INFO)
+#         l.addHandler(h)
+#         logger.addHandler(h)
 
-    client = TapSDK(loop)
-    # devices = await client.list_connected_taps()
-    x = await client.manager.connect_retrieved()
-    x = await client.manager.is_connected()
-    logger.info("Connected: {0}".format(x))
-    # await client.set_input_mode(TapInputMode("controller"))
-    # await client.register_mouse_events(OnMoused)
-    # await client.register_air_gesture_state_events(OnMouseModeChange)
-    # await asyncio.sleep(3)
+#     client = TapSDK(loop)
+#     # devices = await client.list_connected_taps()
+#     x = await client.manager.connect_retrieved()
+#     x = await client.manager.is_connected()
+#     logger.info("Connected: {0}".format(x))
 
-    await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
-    await client.register_raw_data_events(on_raw_data)
-    await client.send_vibration_sequence([100,100,100])
-    # await asyncio.sleep(3)
-    # await client.send_vibration_sequence([100, 200])
-    await asyncio.sleep(run_time, True) # this line  is to keep the program running for 50 seconds
+#     await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
+#     await client.register_raw_data_events(on_raw_data)
+#     await client.send_vibration_sequence([100,100,100])
+#     # await asyncio.sleep(3)
+#     # await client.send_vibration_sequence([100, 200])
+#     await asyncio.sleep(run_time, True) # this line  is to keep the program running for 50 seconds
 
 on_raw_data.imu_cnt = 0
 on_raw_data.accel_cnt = 0
@@ -260,10 +278,10 @@ if __name__ == "__main__":
     else:
         # load the model
         loaded_model = joblib.load(model_path)
-    # # load in model
     try:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run(loop, True))
+        loop.run_until_complete(connect_to_tapstrap(loop,on_raw_data,100))
+        # loop.run_until_complete(run(loop, True))
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         loop.close()

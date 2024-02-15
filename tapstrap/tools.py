@@ -237,19 +237,21 @@ def merge_packets(packets, prexisting=False, remove_label=False, collecting_data
     accl_packets = [p for p in packets if p['type'] == 'accl']
     imu_packets = [p for p in packets if p['type'] == 'imu']
     merged_packets = []
-
-    for accl_packet in accl_packets:
-        closest_imu = min(imu_packets, key=lambda imu: abs(imu['ts'] - accl_packet['ts']))
-        merged_payload = closest_imu['payload'] + accl_packet['payload']
-        if(prexisting):
-            merged_packets.append({"timestamp": accl_packet['ts'], "payload": merged_payload, "label": accl_packet['label']})
-        elif(remove_label):
-            merged_packets.append({"ts": accl_packet['ts'], "payload": merged_payload})
-        elif(collecting_data):
-            merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload})
-        else:
-            merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload, 'label': accl_packet['label']})
-    return merged_packets
+    try:
+        for accl_packet in accl_packets:
+            closest_imu = min(imu_packets, key=lambda imu: abs(imu['ts'] - accl_packet['ts']))
+            merged_payload = closest_imu['payload'] + accl_packet['payload']
+            if(prexisting):
+                merged_packets.append({"timestamp": accl_packet['ts'], "payload": merged_payload, "label": accl_packet['label']})
+            elif(remove_label):
+                merged_packets.append({"ts": accl_packet['ts'], "payload": merged_payload})
+            elif(collecting_data):
+                merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload})
+            else:
+                merged_packets.append({ 'ts': accl_packet['ts'], 'payload': merged_payload, 'label': accl_packet['label']})
+        return merged_packets
+    except Exception as e:
+        print("Error: ", e)
 
 '''
     takes a accel file name, and imu file name, and merges them together
@@ -343,9 +345,35 @@ test_packets = [{'type': 'accl', 'ts': 5711184, 'payload': [0, 12, -29, -32, 2, 
                 {'type': 'accl', 'ts': 5711200, 'payload': [0, 11, -29, -32, 2, -7, -32, 2, -2, -32, 0, 5, -32, 1, 4]}]
 
 # interpolate_preexisting_data()
+from tapsdk.models import AirGestures
+from tapsdk import TapSDK, TapInputMode
+import asyncio
+import logging 
+from bleak import _logger as logger
 
+async def connect_to_tapstrap(loop,callback,timeout=100):
+    print("Connecting to Tap Strap")
+    l = logging.getLogger("asyncio")
+    l.setLevel(logging.DEBUG)
+    h = logging.StreamHandler(sys.stdout)
+    h.setLevel(logging.INFO)
+    l.addHandler(h)
+    logger.addHandler(h)
 
-def connect_to_tapstrap(): 
+    client = TapSDK(loop)
+    devices = await client.list_connected_taps()
+    print("devices",devices)
+    x = await client.manager.connect_retrieved()
+    x = await client.manager.is_connected()
+    logger.info("Connected: {0}".format(x))
+
+    await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
+    await client.register_raw_data_events(callback)
+    await client.send_vibration_sequence([100,100,100])
+    await asyncio.sleep(timeout, True) # this line  is to keep the program running for 50 seconds
+
+    
+
 
     # connect to the tapstrap
     pass

@@ -36,7 +36,7 @@ merged_values = []
 global first_iteration
 first_iteration = True
 global base_path
-base_path = 'tapstrap/training_data/finger_taps'
+base_path = 'tapstrap/training_data/fast_finger_taps'
 
 def OnRawData(identifier, packets):
     if is_recording:
@@ -54,7 +54,6 @@ def OnRawData(identifier, packets):
             if m["type"] == "accl":
                     timestamped_accel_values.append([m["ts"], m["payload"]])
                     OnRawData.accel_cnt += 1
-           
 
 OnRawData.imu_cnt = 0
 OnRawData.accel_cnt = 0
@@ -86,7 +85,7 @@ def get_next_folder_num(gesture_name):
         folder_count[gesture_name]  += 1
         return folder_count[gesture_name]
     
- 
+
 
 def file_writer(file_path, data, label):
     with open(file_path, 'w') as f:
@@ -292,13 +291,7 @@ async def run(loop, debug=False):
     x = await client.manager.is_connected()
     logger.info("Connected: {0}".format(x))
 
-    # await client.set_input_mode(TapInputMode("controller"))
-    # await client.set_input_mode(TapInputMode("controller"))
-    # await client.send_vibration_sequence([100, 200, 300, 400, 500])
-
-
     await client.register_raw_data_events(OnRawData)
-
     await asyncio.sleep(1)
     await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
     await client.send_vibration_sequence([300,100,300])
@@ -325,9 +318,7 @@ async def run(loop, debug=False):
 
     # after the 100 seconds, print a message saying that the program is done
     print("\nCommunication with TapStrap Closed. ")
-    # open_channel = False
     exit()
-
 
     # await asyncio.sleep(10.0, True) # this line  is to keep the program running for 50 seconds
 
