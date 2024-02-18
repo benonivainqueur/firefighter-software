@@ -10,3 +10,6 @@ sudo cp ./wlan0.txt /etc/network/interfaces.d/wlan0
 echo 'batman-adv' | sudo tee --append /etc/modules
 
 echo 'denyinterfaces wlan0' | sudo tee --append /etc/dhcpcd.conf
+
+# give the raspberry pi a static ip address
+

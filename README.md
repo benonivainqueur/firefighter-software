@@ -39,6 +39,8 @@ bluetooth tool:
 bluetoothctl
 Method to create WIFI hotspot through create_ap
 
+router pw: firefighter, 192.168.8.1
+
 http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#SSH_remote_login_development_board
 https://github.com/oblique/create_ap
 
