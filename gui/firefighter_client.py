@@ -14,39 +14,16 @@ import threading
 # import library to get the current ip add
 import socket
 import os
+import asyncio
+
 # import __init__
 import sys
 import random
 sys.path.append( sys.path[0] + "/..")
+import tapstrap.realtime_inference 
+import schedule 
+import time 
 
-
-def get_demo_firefighter_data():
-        # Create a copy of the demo data
-        # print("Getting demo firefighter data")
-        demo_data = demo_firefighter_data.copy()
-        for firefighter in demo_data:
-            # update each time to a random value
-            # firefighter["last_updated"] = str(time.time()) # random number between 0 and 100
-            firefighter["last_updated"] = random.randint(0, 100)
-            # randomize the wifi strength
-            firefighter["wifi_strength"] = random.choice(["Excellent", "Good", "Fair", "Poor"])
-            # randomize the gesture
-            firefighter["gesture"] = random.choice(["0", "1", "2", "3","4"])
-            firefighter["ip"] = "100"
-            #   ("IP", view_data["ip"]),
-            # ("Bluetooth ID", view_data["bt_id"]),
-            # ("Tapstrap Connected", view_data["tapstrap_connected"]),
-            # ("TapStrap Battery Percent", view_data["tapstrap_battery"]),
-            # ("Location", view_data["location_var"]),
-            # ("Gesture", view_data["gesture_var"]),
-            # ("Wifi Strength", view_data["wifi_strength_var"]),
-            # ("Last Updated", view_data["last_updated_var"]),
-            firefighter["tapstrap_connected"] = random.choice(["True", "False", "other"])
-            firefighter["tapstrap_battery"] = random.randint(0, 100)
-            firefighter["bt_id"] = random.choice(["0", "1", "2", "3","4"])
-            firefighter["tapstrap_id"] = random.choice(["0", "1", "2", "3","4"])
-        
-        return demo_data
 
 class Firefighter:
     """
@@ -86,10 +63,11 @@ class Firefighter:
         self.location = location
         self.wifi_strength = "Excellent"
         self.wifi_network_name = "FirefighterNet"
-# self.ip = socket.gethostbyname(socket.gethostname())
-        self.ip = self.get_ip()
+        # self.ip = socket.gethostbyname(socket.gethostname())
+        self.ip = None
         self.server_ip = "192.168.0.30"
         self.server_port = 5555
+        self.connected = False
         self.id = id
         self.neighbors = []
         self.last_updated = time.time()
@@ -97,12 +75,14 @@ class Firefighter:
         self.tapstrap_battery = "100"
         self.tapstrap_id = 0
         self.bt_id = "0"
-        self.tapstrap_connected = "False"
+        self.tapstrap_connected = False
         self.gesture = "None"
         self.connection_tree = {}
         self.bit_rate = "None"
+        self.tapstrap_shared_queue = tapstrap.realtime_inference.shared_queue
+        self.disconnect_time = 0
 
-    def update_location(self, new_location):
+    def update_location(self, new_location=None):
         """
         Updates the location of the firefighter.
 
@@ -112,68 +92,105 @@ class Firefighter:
         self.location = new_location
         self.update_time()
 
-    def update_wifi_strength(self, new_strength):
-        """
-        Updates the WiFi strength of the firefighter.
-
-        Parameters:
-        - new_strength (str): The new WiFi strength.
-        """
-        self.wifi_strength = new_strength
-        self.update_time()
-
-    def update_neighbors(self, new_neighbors):
+    def update_neighbors(self):
         """
         Updates the list of neighboring firefighters.
 
         Parameters:
         - new_neighbors (list): The new list of neighboring firefighters.
         """
-        self.neighbors = new_neighbors
+        # self.neighbors = new_neighbors
+
+        # run wifi scan, get the list of wifi networks and their signal strengths
+        # self.neighbors = wifi.scan()
+        self.neighbors = ["John", "Sarah", "Michael"]
         self.update_time()
 
     def update_time(self):
         """
-        Updates the last updated timestamp.
+        Updates this Firefighters last updated timestamp.
         """
         self.last_updated = time.time()
-
-    def send_data(self, data):
+    
+    def send_data(self):
         """
-        Sends data to the server.
+        Converts the Firefighter object to a JSON string.
 
-        Parameters:
-        - data: The data to be sent.
+        Returns:
+        - str: The JSON representation of the object.
         """
+        if not f1.tapstrap_shared_queue.empty():
+            gesture = f1.tapstrap_shared_queue.get(block=False)
+            f1.gesture = gesture
+            print(f"Gesture: {gesture}")
+        else:
+            print("gesture queue is empty.")
+        
+        # delete client object
+        # d = {k: v for k, v in d.items() if k != "client"}
+        d = self.__dict__.copy()
+        d.pop("tapstrap_shared_queue")
+        d.pop("client")
+        # d["tapstrap_shared_queue"] = list(self.__dict__["tapstrap_shared_queue"])
+
+        d = json.dumps(d, skipkeys=True, default=str)
+        self.client.sendall(d.encode())
+
+       
+        # if f1.connected:
+            # f1.send_data()
+            
         # send data to the server
-        pass
+        # return d
 
-    def get_ip(self):
+    def update_ip(self):
         """
         Retrieves the IP address of the firefighter's device.
 
         Returns:
         - str: The IP address.
         """
+        print("updating ip")
         try:
             ip = subprocess.run(['hostname', '-I'], capture_output=True, text=True).stdout.split(" ")[0]
-            return ip
+            self.ip = ip
         except:
             self.ip = "Error"
-
-    def run_tapstrap_subprocess():
+    def update_tapstrap_battery(self):
         """
-        Runs the TapStrap subprocess.
+        Updates the TapStrap battery level.
         """
-        import tapstrap.realtime_inference 
-        output_queue = queue.Queue()
-        shared_queue = tapstrap.realtime_inference.shared_queue
-        threading.Thread(target=tapstrap.realtime_inference.main, args=(False,)).start()
+        # get the battery level of the tapstrap
+        # use bluetooth to get the battery level
+        # self.tapstrap_battery = bluetooth.get_battery_level()
+        self.tapstrap_battery = "100"
+        self.update_time()
+    
+    
 
-        while not shared_queue.empty():
-            a = shared_queue.get()
+    def run_tapstrap_subprocess(self):
+            """
+            Runs the TapStrap subprocess.
+
+            This method starts the TapStrap subprocess and continuously retrieves
+            gesture predictions from the shared queue. It assigns the latest gesture
+            to the `self.gesture` attribute and prints the value of the gesture.
+
+            Note: This method requires the `asyncio` library and a running event loop.
+            """
             
-            print("queue value", a)
+            # last in first out queue to ensure we always get the most recent prediction
+            loop = asyncio.get_event_loop() # we need this loop to run the tapstrap inference since it uses asyncio
+            threading.Thread(target=tapstrap.realtime_inference.main, args=(True,loop,)).start()
+            self.tapstrap_connected = True
+            # threading.Thread(target=tapstrap.realtime_inference.main, args=(True,loop,)).start()
+
+            # tapstrap.realtime_inference.main(False)
+            # while not shared_queue.empty():
+            # while True:
+            #     gesture = shared_queue.get()
+            #     self.gesture = gesture
+                # print("queue value", gesture)
 
     def to_json(self):
         """
@@ -184,36 +201,44 @@ class Firefighter:
         """
         return json.dumps(self.__dict__)
 
-    def get_wifi_strength(self):
+    def update_wifi_strength(self):
         """
-        Retrieves the WiFi strength.
+        Updates this firefighters WiFi strength.
 
         Returns:
         - str: The WiFi strength.
         """
-   
-        command_output = subprocess.run(['iw', 'dev', 'wlan0', 'link'], capture_output=True, text=True)
-        signal_level = [line for line in command_output.stdout.split('\t') if len(line) > 0]
-        signal_level = [line.replace("\n", "") for line in signal_level]
-        print(signal_level) 
-        self.wifi_strength = signal_level[5]
-        self.wifi_network_name = signal_level[1]
-        self.bit_rate = signal_level[6]
-        return signal_level[5]
+        try :
+            command_output = subprocess.run(['iw', 'dev', 'wlan0', 'link'], capture_output=True, text=True)
+            signal_level = [line for line in command_output.stdout.split('\t') if len(line) > 0]
+            signal_level = [line.replace("\n", "") for line in signal_level]
+            print(signal_level) 
+            self.wifi_strength = signal_level[5]
+            self.wifi_network_name = signal_level[1]
+            self.bit_rate = signal_level[6]
+        except Exception as e:
+            self.wifi_strength = "Error"
+            self.wifi_network_name = "Error"
+            self.bit_rate = "Error"
+        # return signal_level[5]
+        self.update_time()
 
     def route_wifi_data(self):
         """
         Routes WiFi data to the server or the nearest firefighter.
         """
+        print("routing wifi data")
         pass
     
     def route_bluetooth_data(self):
         """
         Routes Bluetooth data to the server or the nearest firefighter.
         """
+        print("routing bluetooth data")
+        return None
         pass
 
-    def build_connection_tree(self):
+    def update_connection_tree(self):
         """
         Builds a connection tree.
         """
@@ -226,42 +251,33 @@ class Firefighter:
         Returns:
         - str: The string representation.
         """
-        return f"{self.name} is at {self.location}"
+        return f"{self.name} is at {self.location}, Connected to {self.server_ip}:{self.server_port}"
     
     ############ CLIENT ################
 
-    def client(self, server_ip, server_port):
+    def run_client(self, server_ip, server_port):
+        """
+        Connects to the server using the provided IP address and port number.
+        
+        Args:
+            server_ip (str): The IP address of the server.
+            server_port (int): The port number of the server.
+        """
         self.server_ip = server_ip
         self.server_port = server_port
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((self.server_ip, int(self.server_port)))
-        self.data = None
+        self.connected = True
+        # self.data = None
 
-    def get_data(self):
-        self.data = self.client.recv(1024).decode()
-        return self.data
-
-    def __str__(self):
-        return f"Connected to {self.server_ip}:{self.server_port}"
+    # def get_client_data(self):
+    #     self.data = self.client.recv(1024).decode()
+    #     return self.data
     
-    def send_data(self, data):
-        self.client.sendall(data.encode())
-
-
-
-
-# main method 
-
-
-# Example usage:
-# if __name__ == "__main__":
-
-
-        
+    # def send_data(self, data):
+    #     self.client.sendall(data.encode())
 
 # class FirefighterClient:
-
-    
 #     firefighter1 = Firefighter(1,"John", "Building A, Floor 2" )
 #     firefighter2 = Firefighter(2,"Sarah", "Building A, Floor 2" )
 #     firefighter3 = Firefighter(3,"Michael", "Building A, Floor 2" )
@@ -283,20 +299,79 @@ if __name__ == "__main__":
     # # Create a firefighter client
     f1 = Firefighter(1, "John", "Building A, Floor 2")
     # f2 = Firefighter(2, "Sarah", "Building B, Floor 32")
-    f1.client("192.168.0.30","5555")
+    counter = 0
+    while not f1.connected:
+        try:
+            f1.run_client("192.168.0.30","5555")
+        except Exception as e:
+            print("attempt {} connecting to server, trying again in 3 seconds".format(counter))
+            time.sleep(1)
+        counter +=1  
+        if counter > 5:
+            print("Failed to connect to server after 5 attempts, exiting.")
+            break
+
+    # counter = 0
+    # while not f1.tapstrap_connected:
+    #     try: 
+    #         f1.run_tapstrap_subprocess()
+    #     except Exception as e:
+    #         print("failed to run tapstrap subprocess attempt {}, trying again in 3 seconds".format(counter))
+    #         time.sleep(1)
+    #     counter += 1
+    #     if counter > 5:
+    #         print("Failed to connect to tapstrap after {} attempts, exiting.".format(counter))
+
+    # s = sched.scheduler()
+    
+    # s.enter(5,1, f1.get_wifi_strength)
+    # indicate what events to schedule, the time between each event and the function to call
+    events = [
+        (2, 1, f1.update_wifi_strength),
+        (2,1, f1.update_tapstrap_battery),
+        (2,1, f1.update_connection_tree),
+        (2,1, f1.update_neighbors),
+        (2,1, f1.update_ip),
+        (2,1,  f1.update_location),
+        (1,1, f1.send_data), # send data to the server
+        (1,1, f1.route_wifi_data),
+        (2,1, f1.route_bluetooth_data),
+        # (10,1, f1.update_time),
+        ]
+    # schedule the events
+    for e in events:
+        schedule.every(e[0]).seconds.do(e[2])
+    
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+    # while True:
+    # s.run(blocking=False)
+    # time.sleep(100)
+    # time.sleep(1)
+    # s.run()
+
+
+
+
+
     # while True:
     #     # wait 1 second
-    #     time.sleep(.5)
-    #     f1.last_updated = time.time()
-    #     f1.get_wifi_strength()
-    #     client.send_data(f1.to_json())  
-    #     time.sleep(.5)
-    #     f2.last_updated = time.time()
-    #     f2.neighbors = 1
-    #     client.send_data(f2.to_json())
+    #     time.sleep(1)
+        # while True:
+        # dont halt the program if theres nothing in the queue, just print that theres nothing
+        # check if not empty
+      
+        # f1.last_updated = time.time()
+        # f1.get_wifi_strength()
+        # client.send_data(f1.to_json())  
+        # time.sleep(.5)
+        # f2.last_updated = time.time()
+        # f2.neighbors = 1
+        # client.send_data(f2.to_json())
         
     #     print(f"sent {len(f1.to_json())} bytes to the server")
-    output_queue = queue.Queue()
     # run the tapstrap subprocess in a thread
     # import threading
     # t1 = threading.Thread(target=run_tapstrap_subprocess, args=(output_queue,))
@@ -304,9 +379,8 @@ if __name__ == "__main__":
     # t1.start()
     # print("Subprocess exited with return code:")
     # Print live output from the queue
-    f1.run_tapstrap_subprocess(output_queue=output_queue)
-    while not output_queue.empty():
-        print(output_queue.get())
+    # while not output_queue.empty():
+    #     print(output_queue.get())
     # f1.tapstrap_inference()
         
         # print("sent data too server")      

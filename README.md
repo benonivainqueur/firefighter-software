@@ -42,6 +42,10 @@ Method to create WIFI hotspot through create_ap
 http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#SSH_remote_login_development_board
 https://github.com/oblique/create_ap
 
+jetson: 192.168.0.83
+jetson: 192.168.0.81
+# make unique vibrations 
+
 
 ## Networking Links
 https://github.com/waterrmalann/NetworkBandwidthMonitor

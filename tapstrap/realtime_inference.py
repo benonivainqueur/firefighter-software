@@ -7,8 +7,6 @@ from tapsdk import TapSDK, TapInputMode
 from tapsdk.models import AirGestures
 import os
 import asyncio
-# import platform
-# import logging
 from bleak import _logger as logger
 # import sys
 # import json
@@ -19,21 +17,22 @@ import numpy as np
 from scipy.signal import find_peaks
 from tabulate import tabulate
 import time
-from .tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data
+import __init__
+sys.path.append( sys.path[0] + "/..")
+
+from tapstrap.tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data, connect_to_tapstrap
 # from tapstrap_gesture_recorder import average_and_create_payload
-from .tapstrap_interpolated import merge_packets
-from .tools import connect_to_tapstrap
+from tapstrap.tapstrap_interpolated import merge_packets
+# from  import connect_to_tapstrap
 import queue
 global shared_queue 
-shared_queue = queue.Queue(maxsize=10)
+queue_size = 10
+shared_queue = queue.LifoQueue() 
 
 # on_linux = False
 # # use os package to determine if we are on a form of linux
 # on_linux = on_linux()
-
 # check if we are on ubuntu
-
-    
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
 
 # List to hold features
@@ -42,10 +41,12 @@ old_features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z'
             'pinky_x', 'pinky_y', 'pinky_z']
 
 features = ['thumb_imu_x', 'thumb_imu_y', 'thumb_imu_z', 'thumb_imu_pitch','thumb_imu_yaw', 'thumb_imu_roll'] + old_features
-# print(features)
+# debug_print(features)
 
 real_time_data = pd.DataFrame(columns=features)  # Initialize an empty dataframe with feature column names
 
+# def debug_debug_print(msg):
+    
 def process_accelerometer_data(accel_values):
     # turn the accelerometer data into a dataframe
     df = pd.DataFrame(accel_values, columns=old_features)
@@ -67,20 +68,19 @@ def perform_inference(df):
     if lstm: 
         df = df.dropna()
         df = reshape_data(df, window_size=100, use_label=False)
-        # print("df shape", df)
+        # debug_print("df shape", df)
         start = time.time()
         try:
             predictions = loaded_model.predict(df)
-       
             end = time.time()
             inf_time = end - start
             # use three decimal places
             # inf_time = round(inf_time, 3)
-            print(inf_time,"s")
-            print("sparse", predictions)
-            print("predictions",  np.argmax(predictions, axis=1))
-            # print("raw predictions", predictions)
-            # print("pred " ,predictions[0])
+            debug_print(inf_time,"s")
+            debug_print("sparse", predictions)
+            debug_print("predictions",  np.argmax(predictions, axis=1))
+            # debug_print("raw predictions", predictions)
+            # debug_print("pred " ,predictions[0])
             pred = predictions[0]
             max = -100
             max_index = -1
@@ -89,19 +89,19 @@ def perform_inference(df):
                     max = pred[i]
                     max_index = i
         except Exception as e:
-            print(e)
-            print("error in inference")
-        # print("max index", max_index)
+            debug_print(e)
+            debug_print("error in inference")
+        # debug_print("max index", max_index)
 
-        # print("argmax", np.argmax(pred))
+        # debug_print("argmax", np.argmax(pred))
         # predictions = np.argmax(predictions[0])
         # get index of max value
         # for i in range(len(predictions)):
         #     predictions[i] = np.argmax(predictions[i])
         # predictions = np.bincount(predictions).argmax()
-        # print("predictions:", predictions, "shape", predictions.shape())
-        # print("pred",predictions)
-        # print(" most likely prediction", np.bincount(predictions).argmax())
+        # debug_print("predictions:", predictions, "shape", predictions.shape())
+        # debug_print("pred",predictions)
+        # debug_print(" most likely prediction", np.bincount(predictions).argmax())
         # return predictions
         # time.sleep(2)
 
@@ -114,11 +114,15 @@ def perform_inference(df):
         inf_time = end - start
         # use three decimal places
         inf_time = round(inf_time, 3)
-        print("predictions:", predictions, "inf_time:", inf_time,"s")
+        # shared_queue.put((predictions[0],time.time()))
+        if shared_queue.qsize() > queue_size:
+            shared_queue.get()
+        debug_print("predictions:", predictions, "inf_time:", inf_time,"s")
+        return predictions[0]
 
     # except Exception as e:
-    #     print(e)
-    #     print("error in inference")
+    #     debug_print(e)
+    #     debug_print("error in inference")
     if len(predictions) == 0:
         return -1
     else: 
@@ -126,26 +130,6 @@ def perform_inference(df):
     
    
 
-# def on_raw_data_no_thumb(identifier, packets):
-#     if  (on_raw_data.accel_cnt >= 200 or on_raw_data.imu_cnt >= 200):
-#         on_raw_data.accel_cnt = 0
-#         on_raw_data.imu_cnt = 0
-#         # print("performing inference")
-#         new_df = process_accelerometer_data(timestamped_accel_values)
-#         feature_df = feature_extraction(new_df, use_label=False,normalize=True)
-#         perform_inference(feature_df)
-#         # clear out the arrays
-#         timestamped_accel_values.clear()
-#         timestamped_imu_values.clear()
-#         print(timestamped_accel_values)
-#     else: 
-#         for m in packets:
-#             if m["type"] == "imu":
-#                 timestamped_imu_values.append(m["payload"])
-#                 on_raw_data.imu_cnt += 1
-#             if m["type"] == "accl":
-#                 timestamped_accel_values.append(m["payload"])
-#                 on_raw_data.accel_cnt += 1
 
 '''
     clears out the arrays and resets the counters
@@ -167,66 +151,59 @@ def reset_arrays():
 '''
 def on_raw_data(identifier, packets):
     if  (on_raw_data.interpol_cnt >= polling_window or on_raw_data.accel_cnt >= polling_window or on_raw_data.imu_cnt >= polling_window ):
-        # print("performing inference")
-        if use_thumb:
-            new_df = process_interpolated_data(timestamped_interpolated_values)
-            if (lstm == True):
-                feature_df = rolling_feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
-            else:  
-                feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
-            inference = perform_inference(feature_df)
-            shared_queue.put((inference,time.time()))
-            # if (int == 1 and client != None):
-            #     print("vibrate")
-            reset_arrays()
-        else:
-            # new_df = process_accelerometer_data(timestamped_accel_values)
-            # feature_df = feature_extraction(new_df, use_label=False, normalize=True)
-            # val = perform_inference(feature_df)
+            # debug_print("performing inference")
+        # try:
+            if use_thumb:
+                start_time = time.time()
+                new_df = process_interpolated_data(timestamped_interpolated_values)
+                if (lstm == True):
+                    feature_df = rolling_feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+                else:  
+                    feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+               
+                inference = perform_inference(feature_df)
+                # use a seperate thread to run inference so that we arent blocking the main thread
+                # thread = threading.Thread(target=perform_inference, args=(feature_df,))
+                shared_queue.put((inference,time.time()))
+                end_time = time.time()
+                # debug_print("FE Time", end_time - start_time)
+                # if (int == 1 and client != None):
+                #     debug_print("vibrate")
+                reset_arrays()
+            else:
+                # new_df = process_accelerometer_data(timestamped_accel_values)
+                # feature_df = feature_extraction(new_df, use_label=False, normalize=True)
+                # val = perform_inference(feature_df)
+                # reset_arrays()
+                pass
+        # except Exception as e:
+            # debug_print(e)
+            # debug_print("error on_raw_data")
             # reset_arrays()
-            pass
+            # return -1
     else: 
-        # print("appending to arrays")
+        # debug_print("appending to arrays")
         ip = merge_packets(packets,False,remove_label=use_thumb)
-        # print("ip", ip)
-        for m in ip:
-            # print("timestamp", m["ts"])
-            timestamped_interpolated_values.append(m["payload"])
-            on_raw_data.interpol_cnt += 1  
-        if not use_thumb:
-            for m in packets:
-                # these arent timestamped
-                if m["type"] == "imu":
-                    timestamped_imu_values.append(m["payload"])
-                    on_raw_data.imu_cnt += 1
-                if m["type"] == "accl":
-                    timestamped_accel_values.append(m["payload"])
-                    on_raw_data.accel_cnt += 1
+        # debug_print("ip", ip)
+        try: 
+            for m in ip:
+                # debug_print("timestamp", m["ts"])
+                timestamped_interpolated_values.append(m["payload"])
+                on_raw_data.interpol_cnt += 1  
+            if not use_thumb:
+                for m in packets:
+                
+                    # these arent timestamped
+                    if m["type"] == "imu":
+                        timestamped_imu_values.append(m["payload"])
+                        on_raw_data.imu_cnt += 1
+                    if m["type"] == "accl":
+                        timestamped_accel_values.append(m["payload"])
+                        on_raw_data.accel_cnt += 1
+        except Exception as e:
+            debug_print(e)
+            debug_print("error on_raw_data")
 
-
-# async def run(loop, debug=False):
-#     print("beginning run looop")
-#     if debug:
-#         # loop.set_debug(True)
-#         l = logging.getLogger("asyncio")
-#         l.setLevel(logging.DEBUG)
-#         h = logging.StreamHandler(sys.stdout)
-#         h.setLevel(logging.INFO)
-#         l.addHandler(h)
-#         logger.addHandler(h)
-
-#     client = TapSDK(loop)
-#     # devices = await client.list_connected_taps()
-#     x = await client.manager.connect_retrieved()
-#     x = await client.manager.is_connected()
-#     logger.info("Connected: {0}".format(x))
-
-#     await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
-#     await client.register_raw_data_events(on_raw_data)
-#     await client.send_vibration_sequence([100,100,100])
-#     # await asyncio.sleep(3)
-#     # await client.send_vibration_sequence([100, 200])
-#     await asyncio.sleep(run_time, True) # this line  is to keep the program running for 50 seconds
 
 on_raw_data.imu_cnt = 0
 on_raw_data.accel_cnt = 0
@@ -238,23 +215,35 @@ timestamped_interpolated_values = []
 polling_window = 50 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 
-# 
-def main(headless = False):
-   
-   
-    # print current directory
-    while True:
-        # print("hello!")
-        shared_queue.put(("0",time.time()))
-        # shared_queue.put(time.time())
-        # put in delay 
-        time.sleep(1)
-        # put time in queue 
+def debug_print(*args):
+    if headless: 
+        pass
+    else:
+        print(*args)
+    
+
+def main(hl = False,async_loop=None):
+    global headless 
+    global use_thumb
+    global run_time
+    global loaded_model
+    global lstm
+    headless = hl
+    lstm = False
+    use_thumb = True # decides whether or not to use the thumb in the feature extraction
+    run_time = 200.0
+    # debug_print current directory
+    # while True:
+    #     # debug_print("hello!")
+    #     shared_queue.put(("0",time.time()))
+    #     # shared_queue.put(time.time())
+    #     # put in delay 
+    #     time.sleep(1)
+    #     # put time in queue 
         
     # time.sleep(1)
-    print(os.getcwd())
-    use_thumb = True # decides whether or not to use the thumb in the feature extraction
-    run_time = 200.0 # how long the program will run for
+    # debug_print(os.getcwd())
+     # how long the program will run for
     # get current directory
     current_dir = os.path.dirname(os.path.realpath(__file__))
     # get the name of each model under the model directory
@@ -266,15 +255,13 @@ def main(headless = False):
     # use list comprehension to map a index to a model name 
     model_tuples = [(models[i], i) for i  in range(len(models))]
     if headless:
-       
+        # debug_print("running headless")
         model_num = 2
     else: 
         model_num = input("Enter model number. {models}:".format(models=model_tuples))
     model_path = current_dir+'/models/{m}'.format(m = model_tuples[int(model_num)][0])
-    print("Using model: {m}".format(m = model_tuples[int(model_num)][0]))
-    
+    debug_print("Using model: {m}".format(m = model_tuples[int(model_num)][0]))
     # check if the model is an lstm
-    lstm = False
     if "lstm" in model_path:
         lstm = True
         # load the lstm model
@@ -284,15 +271,18 @@ def main(headless = False):
         # load the model
         loaded_model = joblib.load(model_path)
     try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(connect_to_tapstrap(loop,on_raw_data,100))
+        # loop = asyncio.new_event_loop()
+        if async_loop == None: # if loop is not passed in because headless is false
+            async_loop = asyncio.get_event_loop()
+        # get a new event loop
+        async_loop.run_until_complete(connect_to_tapstrap(async_loop,on_raw_data,run_time))
         # loop.run_until_complete(run(loop, True))
     except KeyboardInterrupt:
-        print("KeyboardInterrupt")
-        loop.close()
+        debug_print("KeyboardInterrupt")
+        async_loop.close()
     except Exception as e:
-        print(e)
-        loop.close()
+        debug_print(e)
+        async_loop.close()
 
 if __name__ == "__main__":
     main()

@@ -9,5 +9,6 @@ venv/
 *.log
 *.plog
 *.csv
-
-**/__pycache__/
+# **/__pycache__/
+tapstrap/__pycache__/tapstrap_interpolated.cpython-311.pyc
+tapstrap/__pycache__/tools.cpython-311.pyc

@@ -14,6 +14,8 @@ import seaborn as sns
 import joblib
 import json
 import sys
+import __init__
+sys.path.append( sys.path[0] + "/..")
 
 # from sklearn.metrics import confusion_matrix
 # from sklearn.metrics import accuracy_score, classification_report
@@ -22,8 +24,8 @@ import sys
 # from sklearn.neighbors import KNeighborsClassifier
 # from sklearn.linear_model import LogisticRegression
 
-pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
-pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
+# pd.set_option('display.max_columns', 200)  # max 20 columns to be displayed
+# pd.set_option('display.max_rows', 100)    # max 100 rows to be displayed
 
 def on_linux():
     import platform
@@ -33,6 +35,19 @@ def on_linux():
         return False
 
 def rolling_feature_extraction(new_dataframe, use_label, interpolated = False, normalize=False,assign_label=None):
+    """
+    Extracts rolling features from a given dataframe.
+
+    Parameters:
+    new_dataframe (pd.DataFrame): The input dataframe.
+    use_label (bool): Flag indicating whether to include the label in the output dataframe.
+    interpolated (bool, optional): Flag indicating whether the dataframe contains interpolated data. Defaults to False.
+    normalize (bool, optional): Flag indicating whether to normalize the data. Defaults to False.
+    assign_label (int, optional): The label to assign to the output dataframe. Defaults to None.
+
+    Returns:
+    pd.DataFrame: The dataframe with rolling features extracted.
+    """
     # supress warnings
     features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
@@ -77,45 +92,56 @@ def rolling_feature_extraction(new_dataframe, use_label, interpolated = False, n
 
 
 
-def reshape_data(data, window_size, use_label = False):
-    window_size = 100  # Define the window size for each sequence
-    # num_features = len(data[0].columns) 
-    
-    # data = list_of_dataframes[0]
+def reshape_data(data, window_size=100, use_label=False):
+    """
+    Reshapes the input data into sequences of a specified window size.
+
+    Parameters:
+    - data: The input data, either a pandas DataFrame or a numpy array.
+    - window_size: The size of the sliding window to create sequences.
+    - use_label: Whether to include labels in the output sequences.
+
+    Returns:
+    - sequences: The reshaped data as sequences.
+    - labels: The labels corresponding to each sequence (if use_label is True).
+    """
     sequences = []
     labels = []
-    # d = pd.DataFrame()
-    # print(len(list_of_dataframes))
-
-    # for l in list_of_dataframes[0:1000:50]: # check in the first 100 rows, every 10th row
-        # d = pd.concat([d, l], ignore_index=True)
-
-    # data = d
     if use_label:
         for i in range(len(data) - window_size):
-                sequence = data.iloc[i:i+window_size].values # using .values to convert the dataframe to a numpy array
-                # drop the label column
-                sequence = sequence[:, :-1]
-                sequences.append(sequence)
-                # Assuming the last column is the target variable
-                if(use_label):
-                    labels.append(data.iloc[i+window_size][-1])
+            sequence = data.iloc[i:i+window_size].values
+            sequence = sequence[:, :-1]
+            sequences.append(sequence)
+            if use_label:
+                labels.append(data.iloc[i+window_size][-1])
 
         sequences = np.array(sequences)
         labels = np.array(labels)
         return sequences, labels
-       
-    else: 
+    else:
         for i in range(len(data) - window_size):
-                sequence = data.iloc[i:i+window_size].values
-                sequences.append(sequence)
+            sequence = data.iloc[i:i+window_size].values
+            sequences.append(sequence)
         sequences = np.array(sequences)
         labels = np.array(labels)
         return sequences
 
- 
 
 def feature_extraction(new_dataframe, use_label, interpolated = False, assign_label = None, normalize=False, speedup_multiplier = 1):
+    """
+    Extracts features from a given dataframe.
+
+    Parameters:
+    - new_dataframe (DataFrame): The input dataframe containing the data.
+    - use_label (bool): Flag indicating whether to include the label in the output dataframe.
+    - interpolated (bool): Flag indicating whether the data is interpolated.
+    - assign_label (int or None): The label to assign to the output dataframe. If None, the label from the input dataframe is used.
+    - normalize (bool): Flag indicating whether to normalize the values in the dataframe.
+    - speedup_multiplier (int): The multiplier for speeding up the data by taking every nth row.
+
+    Returns:
+    - data_df (DataFrame): The output dataframe containing the extracted features.
+    """
     features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
                 'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
 
@@ -226,21 +252,36 @@ def feature_extraction(new_dataframe, use_label, interpolated = False, assign_la
     # print('SHAPE:', data_df.shape)
     return data_df
 
-'''
-    This function will take in a list of packets, and merge them together.
-    The way it is being merged is by taking the closest imu packet to the accl packet, and merging them.
-    
-    input: list of packets
-    output: list of merged packets
-'''
 def merge_packets(packets, prexisting=False, remove_label=False, collecting_data=False):
+    """
+    Merge accelerometer and IMU packets based on their timestamps.
+
+    Args:
+        packets (list): List of packets containing accelerometer and IMU data.
+        prexisting (bool, optional): Flag indicating whether to include the 'label' field in the merged packets. Defaults to False.
+        remove_label (bool, optional): Flag indicating whether to remove the 'label' field from the merged packets. Defaults to False.
+        collecting_data (bool, optional): Flag indicating whether the merged packets are being used for data collection. Defaults to False.
+
+    Returns:
+        list: List of merged packets.
+
+    Raises:
+        Exception: If an error occurs during the merging process.
+    """
+    # import time
+    # print(packets)
+    # time.sleep(1)
     accl_packets = [p for p in packets if p['type'] == 'accl']
     imu_packets = [p for p in packets if p['type'] == 'imu']
     merged_packets = []
     try:
         for accl_packet in accl_packets:
-            closest_imu = min(imu_packets, key=lambda imu: abs(imu['ts'] - accl_packet['ts']))
-            merged_payload = closest_imu['payload'] + accl_packet['payload']
+            if len(imu_packets) > 0:
+                closest_imu = min(imu_packets, key=lambda imu: abs(imu['ts'] - accl_packet['ts']))
+                merged_payload = closest_imu['payload'] + accl_packet['payload']
+            else:
+                print("No IMU Packets")
+                return []
             if(prexisting):
                 merged_packets.append({"timestamp": accl_packet['ts'], "payload": merged_payload, "label": accl_packet['label']})
             elif(remove_label):
@@ -257,6 +298,16 @@ def merge_packets(packets, prexisting=False, remove_label=False, collecting_data
     takes a accel file name, and imu file name, and merges them together
     '''
 def merge_files(accel_file_name, imu_file_name):
+    """
+    Merge accelerometer and IMU files into a single file.
+
+    Parameters:
+    accel_file_name (str): The file path of the accelerometer data file.
+    imu_file_name (str): The file path of the IMU data file.
+
+    Returns:
+    None
+    """
     import pandas as pd
     import numpy as np
     import json
@@ -345,43 +396,72 @@ test_packets = [{'type': 'accl', 'ts': 5711184, 'payload': [0, 12, -29, -32, 2, 
                 {'type': 'accl', 'ts': 5711200, 'payload': [0, 11, -29, -32, 2, -7, -32, 2, -2, -32, 0, 5, -32, 1, 4]}]
 
 # interpolate_preexisting_data()
-from tapsdk.models import AirGestures
-from tapsdk import TapSDK, TapInputMode
-import asyncio
-import logging 
-from bleak import _logger as logger
+
 
 async def connect_to_tapstrap(loop,callback,timeout=100):
-    print("Connecting to Tap Strap")
-    l = logging.getLogger("asyncio")
-    l.setLevel(logging.DEBUG)
-    h = logging.StreamHandler(sys.stdout)
-    h.setLevel(logging.INFO)
-    l.addHandler(h)
-    logger.addHandler(h)
+    """
+    Connects to the Tap Strap device and sets up the necessary configurations.
 
-    client = TapSDK(loop)
-    devices = await client.list_connected_taps()
-    print("devices",devices)
-    x = await client.manager.connect_retrieved()
-    x = await client.manager.is_connected()
-    logger.info("Connected: {0}".format(x))
+    Parameters:
+    - loop: The event loop to use for asynchronous operations.
+    - callback: The callback function to handle raw data events from the Tap Strap.
+    - timeout: The timeout duration in seconds for keeping the program running.
 
-    await client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
-    await client.register_raw_data_events(callback)
-    await client.send_vibration_sequence([100,100,100])
-    await asyncio.sleep(timeout, True) # this line  is to keep the program running for 50 seconds
+    Returns:
+    None
+    """
+    from tapsdk import TapSDK, TapInputMode
+    from tapsdk.models import AirGestures
+    import asyncio
+    import logging 
+    from bleak import _logger as logger
+    if not on_linux():
+        # from tapsdk import TapLinuxSDK
+        print("Connecting to Tap Strap")
+        l = logging.getLogger("asyncio")
+        l.setLevel(logging.DEBUG)
+        h = logging.StreamHandler(sys.stdout)
+        h.setLevel(logging.INFO)
+        l.addHandler(h)
+        logger.addHandler(h)
 
-    
-
-
-    # connect to the tapstrap
-    pass
-
+        tap_client = TapSDK(loop)
+        devices = await tap_client.list_connected_taps()
+        # print("devices",devices)
+        x = await tap_client.manager.connect_retrieved()
+        x = await tap_client.manager.is_connected()
+        print("Connected: {}".format(x))
+        await tap_client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
+        await tap_client.register_raw_data_events(callback)
+        await tap_client.send_vibration_sequence([100,100,100])
+        await asyncio.sleep(timeout, True) # this line  is to keep the program running for 50 seconds
+    else: 
+        print("On Linux")
+        
+        # loop.set_debug(True)
+        #l = logging.getLogger("asyncio")
+        #l.setLevel(logging.DEBUG)
+        h = logging.StreamHandler(sys.stdout)
+        h.setLevel(logging.WARNING)
+        #l.addHandler(h)
+        logger.addHandler(h)
+        
+        tap_client = TapSDK(None,loop)
+        if not await tap_client.client.connect_retrieved():
+            logger.error("failed to connect to the device.")
+            return
+        #x = await client.manager.connect_retrieved()
+        #x = await client.manager.is_connected()
+        #logger.info("Connected: {0}".format(x))
+        logger.info("Connected to {}".format(tap_client.client.address))
+        await tap_client.set_input_mode(TapInputMode("controller"))
+        await tap_client.register_raw_data_events(callback)
+        await asyncio.sleep(timeout, True) 
+        await tap_client.set_input_mode(TapInputMode("raw"))
+        await tap_client.send_vibration_sequence([300,100,300])
 
 if __name__ == "__main__":
     pass
-
 
 ''' 
     this function will use tabulate to print out a table
