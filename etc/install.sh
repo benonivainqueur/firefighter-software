@@ -1,9 +1,10 @@
 
 # sudo su
 echo 'export ff="/home/orangepi/firefighter-software"' >> ~/.bashrc
-sudo chmod a+x *.sh
+# sudo chmod a+x *.sh
 sudo apt-get update && sudo apt-get upgrade -y
 sudo apt-get install -y python3-pip
+git config --global --add safe.directory /home/orangepi/firefighter-software
 cd /home/orangepi/firefighter-software/etc
 pip3 install -r python-deps.txt
 cd /home/orangepi
