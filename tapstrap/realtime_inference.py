@@ -14,8 +14,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
-from scipy.signal import find_peaks
-from tabulate import tabulate
+# from scipy.signal import find_peaks
+# from tabulate import tabulate
 import time
 import __init__
 sys.path.append( sys.path[0] + "/..")
