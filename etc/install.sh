@@ -1,5 +1,5 @@
 
-sudo su
+# sudo su
 echo 'export ff="/home/orangepi/firefighter-software"' >> ~/.bashrc
 sudo chmod a+x *.sh
 sudo apt-get update && sudo apt-get upgrade -y
