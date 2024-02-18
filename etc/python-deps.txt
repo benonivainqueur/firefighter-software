@@ -5,7 +5,7 @@ numpy
 scipy
 tabulate
 asyncio
-logging
+
 bleak
 seaborn
 joblib
