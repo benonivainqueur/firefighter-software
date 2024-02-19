@@ -2,7 +2,7 @@ source /etc/network/interfaces.d/*
 # network ismaanged by network manager
 auto wlan0 
 iface wlan0 inet6 manual
-    mtu 1532
+    mtu 1500
     wirless-channel 8
     wireless-essid my-mesh-network
     wireless-mode ad-hoc
