@@ -6,7 +6,7 @@ iface wlan0 inet6 manual
     wirless-channel 8
     wireless-essid my-mesh-network
     wireless-mode ad-hoc
-    wirelss-ap 02:12:34:56:78:9A
+    wireless-ap 02:12:34:56:78:9A
 
 auto bat0
 iface bat0 inet6 auto
