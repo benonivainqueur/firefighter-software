@@ -12,7 +12,7 @@ echo "$new_hostname" | sudo tee /etc/hostname > /dev/null
 # Notify user
 echo "Hostname updated to: $new_hostname"
 
-vi /etc/hosts
+sudo vi /etc/hosts
 
 # Reboot to apply changes
 # read -p "A reboot is required to apply the changes. Would you like to reboot now? (y/n): " choice
