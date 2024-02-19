@@ -13,7 +13,7 @@ batctl if add wlan0
 ip link set up dev $BATMAN_IF
 
 # Optional: Set the mesh interface MTU to 1532 bytes (adjust as needed)
-ip link set mtu 1532 dev $BATMAN_IF
+ip link set dev $BATMAN_IF
 
 # Print information about the BATMAN-adv mesh
 batctl meshif $BATMAN_IF
