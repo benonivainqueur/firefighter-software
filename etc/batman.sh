@@ -6,7 +6,7 @@ sudo ip link set wlan0 down
 sudo ifconfig wlan0 mtu 1532
 sudo iwconfig wlan0 mode ad-hoc
 sudo iwconfig wlan0 essid my-mesh-network
-sudo iwconfig wlan0 ap any
+sudo iwconfig wlan0 ap 01:23:45:67:89:0a
 sudo iwconfig wlan0 channel 8
 sleep 1s
 sudo ip link set wlan0 up
