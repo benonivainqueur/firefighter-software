@@ -11,7 +11,6 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import __init__
 
-from gui_tools import get_demo_firefighter_data
 demo_firefighter_data = [
     {
         "name": "John",
@@ -45,6 +44,13 @@ demo_firefighter_data = [
 
 ]
 
+def center_window(window, width, height):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x_coordinate = (screen_width - width) // 2
+    y_coordinate = (screen_height - height) // 2
+    window.geometry(f"{width}x{height}+{x_coordinate}+{y_coordinate}")
+
 def update_treeview(treeview, text, var):
         new_value = var.get()
         # Find the item in the Treeview that corresponds to the label_text
@@ -57,20 +63,18 @@ class DashboardApp:
         self.data_queue = queue.Queue()
 
         ## SERVER ## 
-        # self.host = "127.0.0.1"
-        self.host = "192.168.0.30"
+        # self.server_ip = "127.0.0.1"
+        self.server_ip = "192.168.0.30"
 
-        self.port = 5555
+        self.server_port = 5555
         self.server= None
-        # self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.client_socket.connect((self.server_host, self.server_port))
-        # self.refresh_data()
-
+        
         ## DATA QUEUES ## 
         self.root = root
         self.label = ttk.Label(root, text="Hello, Tkinter!")
         self.root.title("Firefighter Dashboard")
-        self.root.geometry("1600x1400")
+        center_window(self.root, 1200, 800)
+        # self.root.geometry("1200x800")
         self.firefighter_data = {}  # Dictionary to store actual firefighter data
         self.view_data = {}         # Dictionary to store view representation data
         self.folder_path = ""
@@ -81,28 +85,30 @@ class DashboardApp:
         # Create the left and right frames
         self.root.resizable(height = None, width = None)
         self.left_frame = tk.PanedWindow(self.root, orient="vertical")
-        self.left_frame.pack(side="left", padx=10, pady=10, expand=True)
+        # self.left_frame.pack(side="left", padx=10, pady=10, expand=True)
+        self.left_frame.pack(fill="both", expand=False, side="left")
+
         # self.left_frame.resizable(height = 100, width = 100)
 
         self.right_frame = tk.PanedWindow(self.root, orient="horizontal")
         
         # self.right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=False)
-        self.right_frame.pack(fill="both", expand=True)
+        self.right_frame.pack(fill="both", expand=False, side="right")
         # create bottom frame
         self.bottom_frame = tk.PanedWindow(self.root, orient="horizontal")
         # make the 
-        self.bottom_frame.pack()
+        self.bottom_frame.pack(side="bottom", padx=10, pady=10, fill="both", expand=True)
         # self.bottom_frame.pack(side="bottom", padx=10, pady=10, fill="both", expand=True)
         
-        # Make the right frame resizable
+        # # Make the right frame resizable
         # self.right_frame.columnconfigure(0, weight=1)  # Make the column expandable
         # self.right_frame.rowconfigure(0, weight=1)     # Make the row expandable
         
-        # make the left frame resizeable
+        # # make the left frame resizeable
         # self.left_frame.columnconfigure(0, weight=1)  # Make the column expandable
         # self.left_frame.rowconfigure(0, weight=1)     # Make the row expandable
 
-        # make the bottom frame resizeable
+        # # make the bottom frame resizeable
         # self.bottom_frame.columnconfigure(0, weight=1)  # Make the column expandable
         # self.bottom_frame.rowconfigure(0, weight=1)     # Make the row expandable
         
@@ -110,12 +116,20 @@ class DashboardApp:
         divider = ttk.Separator(self.bottom_frame, orient="horizontal", style="TSeparator")
         divider.pack(fill="x")
         # 
+        self.top_left_notebook = ttk.Notebook(self.left_frame)
+        self.top_left_notebook.pack(fill="both", expand=True, side="top")
         # Create tabs in the left frame
         self.left_notebook = ttk.Notebook(self.left_frame)
         self.left_notebook.pack(fill="both", expand=True)
 
         self.tab_record_gestures_left = ttk.Frame(self.left_notebook)
         self.left_notebook.add(self.tab_record_gestures_left, text="Record Gestures (Left)")
+        # create a widget that will hold the dashboard data. Things such as the # of clients connected,
+        # current ip address, current wifi strength, and the last time the data was updated
+        self.server_info = ttk.Frame(self.top_left_notebook)
+        self.top_left_notebook.add(self.server_info, text="Server Info")
+        # Create widgets for the dashboard tab
+        self.create_server_info(self.server_info)
 
         # Create widgets for Record Gestures tab in the left frame
         self.create_record_gestures_widgets(self.tab_record_gestures_left)
@@ -135,81 +149,58 @@ class DashboardApp:
         # Create widgets for Record Gestures tab in the right frame
         self.create_record_gestures_widgets(self.tab_record_gestures_right)
 
-        # Labels to display data
-        self.strength_label = ttk.Label(root, text="Bluetooth/Wi-Fi Strength:")
-        self.strength_label.pack()
-
-        self.names_label = ttk.Label(root, text="Firefighter Names:")
-        self.names_label.pack()
-
-        self.locations_label = ttk.Label(root, text="Firefighter Locations:")
-        self.locations_label.pack()
-
-        self.time_label = ttk.Label(root, text="Time:")
-        self.time_label.pack()
-
-        # Button to refresh data
-        self.refresh_button = ttk.Button(root, text="Refresh Data", command=self.refresh_data)
-        self.refresh_button.pack()
-
         # Create the main notebook with tabs
-        self.notebook = ttk.Notebook(self.right_frame)
-        self.notebook.pack(expand=True, fill=tk.BOTH)
+        self.bottom_right_notebook = ttk.Notebook(self.right_frame)
+        self.bottom_right_notebook.pack(expand=True, fill=tk.BOTH)
 
         # Create tabs
-        self.tab1 = ttk.Frame(self.notebook)
-        self.tab2 = ttk.Frame(self.notebook)
-        self.tab_record_gestures = ttk.Frame(self.notebook)
+        self.bottom_right_notebook_tab_1 = ttk.Frame(self.bottom_right_notebook)
+        self.bottom_right_notebook_tab_2 = ttk.Frame(self.bottom_right_notebook)
+        self.tab_record_gestures = ttk.Frame(self.bottom_right_notebook)
 
-        self.notebook.add(self.tab1, text="Realtime Inference")
-        self.notebook.add(self.tab2, text="bash terminal")
-
-        # put a bash terminal in the second tab
-        self.bash_terminal = tk.Text(self.tab2)
-        self.bash_terminal.pack()
-        self.bash_terminal.insert(tk.END, "Welcome to the bash terminal\n")
-
-
-       
-
+        self.bottom_right_notebook.add(self.bottom_right_notebook_tab_1, text="Realtime Inference")
+        self.bottom_right_notebook.add(self.bottom_right_notebook_tab_2, text="bash terminal")
         
 
-
-
+        # put a bash terminal in the second tab
+        self.bash_terminal = tk.Text(self.bottom_right_notebook_tab_2)
+        self.bash_terminal.pack()
+        self.bash_terminal.insert(tk.END, "Welcome to the bash terminal\n")
         # self.notebook.add(self.tab2, text="Realtime Firefighter Data")
         # self.notebook.add(self.tab_record_gestures, text="Record Gestures")
 
         # Make the main notebook resizable
-        self.tab1.columnconfigure(0, weight=1)
-        self.tab1.columnconfigure(1, weight=1)
-        self.tab1.rowconfigure(0, weight=1)
+        self.bottom_right_notebook_tab_1.columnconfigure(0, weight=1)
+        self.bottom_right_notebook_tab_1.columnconfigure(1, weight=1)
+        self.bottom_right_notebook_tab_1.rowconfigure(0, weight=1)
 
         self.create_record_gestures_widgets(self.tab_record_gestures)
-
-        self.create_matplotlib_plot(self.tab1)
-
+        self.create_matplotlib_plot(self.bottom_right_notebook_tab_1)
         # self.create_firefighter_data_widgets(self.tab2)
-
         def correctly_resize(event):
             self.canvas_widget.config(width=event.width, height=event.height)
             self.canvas.draw()
 
-            self.tab1.bind("<Configure>", correctly_resize)
+            self.bottom_right_notebook_tab_1.bind("<Configure>", correctly_resize)
             self.canvas_widget.pack(expand=True, fill=tk.BOTH)
-        
+    
+    def create_server_info(self, tab_frame):
+        # Create and pack labels
+        self.ip_label = ttk.Label(tab_frame, text="IP Address: " + self.server_ip)
+        self.ip_label.pack()
+        self.num_clients_label = ttk.Label(tab_frame, text="Number of Clients: 0")
+        self.num_clients_label.pack()
+        self.wifi_strength_label = ttk.Label(tab_frame, text="Wi-Fi Strength: Excellent")
+        self.strength_label = ttk.Label(tab_frame, text="Bluetooth/Wi-Fi Strength:")
+        self.strength_label.pack()
+        self.names_label = ttk.Label(tab_frame, text="Firefighter Names:")
+        self.names_label.pack()
+        self.time_label = ttk.Label(tab_frame, text="Time:")
+        self.time_label.pack()
 
-    
-        
-    # def handle_client(self, client, addr):
-    #     try:
-    #         while True:
-    #             data = self.get_data_with_timestamp(addr)  # Include client address in the data
-    #             client.sendall(data.encode())
-    #             time.sleep(1)  # Simulate data update every 1 second
-    #     except ConnectionResetError:
-    #         print(f"Client {addr} disconnected")
-    #         client.close()
-    
+        self.refresh_button = ttk.Button(tab_frame, text="Refresh Data", command=self.refresh_data)
+        self.refresh_button.pack()
+
     def get_data_with_timestamp(self):
         timestamp = time.time()
         data_with_timestamp = {
@@ -221,30 +212,20 @@ class DashboardApp:
     def start_server(self):
         print("in start server")
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((self.host, self.port))
+        self.server.bind((self.server_ip, self.server_port))
         self.server.listen()
-        print(f"Server listening on {self.host}:{self.port}")
+        print(f"Server listening on {self.server_ip}:{self.server_port}")
         while True:
             client, addr = self.server.accept()
             print(f"Connected to {addr}")
-            # data = self.server.recv(1024).decode()
-            # client_handler = threading.Thread(target=self.handle_client, args=(client, addr))
-            # client_handler.start()
             handle_client_thread = threading.Thread(target=self.handle_client, args=(client, addr))
             handle_client_thread.daemon = True
             handle_client_thread.start()
-            # client_handler = threading.Thread(target=self.handle_client, args=(client,))
-            # client_handler.start()
 
     def handle_client(self, client, addr):
         while True:
             try:
                 
-                    # data = self.get_data_with_timestamp(addr)  # Include client address in the data
-                    # client.sendall(data.encode())
-                    # receive data from the client
-                    # wait for data from the client
-                    
                     data = client.recv(1024).decode()
                     if data:
                         print("Received data:", data)
@@ -260,80 +241,10 @@ class DashboardApp:
                 print(f"Client {addr} disconnected")
                 client.close()
 
-        # while True:
-        #     try:
-        #         data = self.server.recv(1024).decode()
-        #         print("Received data:", data)
-        #         # pass
-        #         # data_dict = json.loads(data)
-        #         self.refresh_data()
-        #     # catch all errors
-        #     except Exception as e:
-        #         print("Connection to the server closed")
-        #         # try to reconnect
-        #         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #         self.server.connect((self.host, self.port))
-        #         # continue
-        #         # break
-        #     self.update_labels([])
-            
-        #     data = self.client_socket.recv(1024).decode()
-        #     print("Received data:", data)
-        #     data_dict = json.loads(data)
-        #     self.update_labels(data_dict["data"])
-        #     self.refresh_data()
-        # l = self.render_firefighter_data()
-
-    # def create_firefighter_data_widgets(self, tab_frame):
-        
-    #     self.rendred_firefighters  = demo_firefighter_data
-    #     for firefighter in self.rendred_firefighters:
-    #         # put a divider between the firefighter data
-    #         divider = ttk.Separator(tab_frame, orient="horizontal", style="TSeparator")
-    #         divider.pack(fill="x")
-    #         firefighter["gesture"] = tk.StringVar()
-    #         firefighter["gesture"].set("None")
-    #         firefighter["frame"] = tk.Frame(tab_frame)
-    #         firefighter["frame"].pack()
-    #         firefighter["name_label"] = tk.Label(firefighter["frame"], text=firefighter["name"])
-    #         firefighter["name_label"].pack()
-    #         firefighter["location_label"] = tk.Label(firefighter["frame"], text=firefighter["location"])
-    #         firefighter["location_label"].pack()
-    #         # firefighter["gesture_label"] = tk.Label(firefighter["frame"], textvariable=firefighter["gesture"])
-    #         firefighter["gesture_label"] = tk.Label(firefighter["frame"], textvariable=firefighter["gesture"])
-
-    #         firefighter["gesture_label"].pack()
-    #         firefighter["id"] = tk.Label(firefighter["frame"], text=firefighter["id"])
-    #         firefighter["id"].pack()
-    #         firefighter["wifi_strength_label"] = tk.Label(firefighter["frame"], text="Wifi Strength: Excellent")
-    #         firefighter["wifi_strength_label"] = tk.Label(firefighter["frame"], text="Wifi Strength:"+firefighter["wifi_strength"])
-    #         firefighter["wifi_strength_label"].pack()
-    #         firefighter["last_updated_label"] = tk.Label(firefighter["frame"], text="Last Updated: {} seconds ago".format(firefighter["last_updated"]))
-
-    #         # color code the wifi strength
-    #         if "Excellent" in firefighter["wifi_strength"]:
-    #             firefighter["wifi_strength_label"].config(fg="green")
-    #         elif "Good" in firefighter["wifi_strength"]:
-    #             firefighter["wifi_strength_label"].config(fg="blue")
-    #         elif "Fair" in firefighter["wifi_strength"]:
-    #             firefighter["wifi_strength_label"].config(fg="orange")
-    #         elif "Poor" in firefighter["wifi_strength"]:
-    #             firefighter["wifi_strength_label"].config(fg="red")
-            
-
-    #     self.rendred_firefighters[0]["id"].config(text="699")
-    #     self.rendred_firefighters[1]["gesture"].set("69")
-    
-        # self.firefighter_data = {}  # Dictionary to store actual firefighter data
-        # self.view_data = {}         # Dictionary to store view representation data
     def get_firefighter_data(self): 
         return self.firefighter_data
-        
-        
 
     def create_firefighter_data_widgets(self, tab_frame):
-        # demo_firefighter_data = get_demo_firefighter_data()  # Assuming you have a function to get demo firefighter data
-        # demo_firefighter_data = get_demo_firefighter_data()  # Assuming you have a function to get demo firefighter data
         demo_firefighter_data = self.get_firefighter_data()  # Assuming you have a function to get demo firefighter data
         
         for firefighter in demo_firefighter_data:
@@ -360,19 +271,6 @@ class DashboardApp:
             view_data[key + "_var"] = tk.StringVar(value=value)
 
         view_data["frame"] = frame
-        # view_data = {
-        #     "name_var": tk.StringVar(value=firefighter_data["name"]),
-        #     "id_var": tk.StringVar(value=firefighter_data["id"]),
-        #     "location_var": tk.StringVar(value=firefighter_data["location"]),
-        #     "gesture_var": tk.StringVar(value=firefighter_data["gesture"]),
-        #     "wifi_strength_var": tk.StringVar(value=firefighter_data["wifi_strength"]),
-        #     "last_updated_var": tk.StringVar(value=firefighter_data["last_updated"]),
-        #     "ip_var": tk.StringVar(value=firefighter_data["ip"]),
-        #     "bt_id_var": tk.StringVar(value=firefighter_data["bt_id"]),
-        #     "tapstrap_connected_var": tk.StringVar(value=firefighter_data["tapstrap_connected"]),
-        #     "tapstrap_battery_var": tk.StringVar(value=firefighter_data["tapstrap_battery"]),
-        #     "frame": frame
-        # }
         self.view_data[firefighter_id] = view_data
 
         # Create and pack labels
@@ -393,6 +291,7 @@ class DashboardApp:
         for key, value in view_data.items():
             if "var" in key:
                 labels.append((key.replace("_var", ""), value))
+                # format the label
         # for label_text, label_var in labels:
         #     label = tk.Label(frame, text=label_text + ": ", anchor="e")
         #     # label.pack(side=tk.LEFT, padx=5, pady=5)
@@ -401,12 +300,6 @@ class DashboardApp:
         #     value_label = tk.Label(frame, textvariable=label_var)
         #     # value_label.pack(side=tk.LEFT, padx=5, pady=5)
         #     value_label
-
-        # for label_text, label_var in labels:
-        #     label = tk.Label(frame, text=label_text + ": ", anchor="e")
-        #     # label.pack()
-        #     value_label = tk.Label(frame, textvariable=label_var)
-        #     # value_label.pack()
 
         # Create and pack treeview widget
         treeview = ttk.Treeview(frame, columns=("name", "value"), show="headings")
@@ -422,16 +315,6 @@ class DashboardApp:
             # if label is a normal string then just add it to the treeview
             # elif type(label_var) == str:
             #     treeview.insert("", "end", values=(label_text, label_var))
-
-
-        # for label_text, label_var in labels:
-        #     treeview.insert("", "end", values=(label_text, label_var.get()))
-        # for label_text, label_var in labels:
-        #     # label_text = tk.Label(frame, text=label_text + ": ", anchor="e")
-        #     # label_var = tk.Label(frame, textvariable=label_var)
-        #     # treeview.insert("", "end", values=(label_text, label_var))
-        #     treeview.insert("", "end", values=(label_text, label_var))
-    # Function to update Treeview with new values
   
     def update_firefighter_widget(self, firefighter_id, new_firefighter_data):
         # Update actual firefighter data
@@ -625,24 +508,7 @@ class DashboardApp:
     #         firefighter["gesture"] = tk.StringVar()
     #         firefighter["gesture"].set("None")
 
-    def update_labels(self, data):
-        # strength = data["strength"]
-        # names = data["names"]
-        # locations = data["locations"]
-        # self.strength_label.config(text=f"Bluetooth/Wi-Fi Strength: {strength}")
-        # self.names_label.config(text=f"Firefighter Names: {names}")
-        # self.locations_label.config(text=f"Firefighter Locations: {locations}")
-        self.time_label.config(text=f"Time: {time.ctime()}")
-        # update firefighter data
-        # self.render_firefighter_data()
-        for firefighter in get_demo_firefighter_data():
-            # pass
-            firefighter_id = firefighter["id"]
-            self.update_firefighter_widget(firefighter_id, firefighter)
-            # firefighter["gesture"].set("None")
-        # self.update_firefighter_widget()
-        # self.render_firefighter_data()
-        # print("Updated labels")
+  
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -652,7 +518,7 @@ if __name__ == "__main__":
     server_thread = threading.Thread(target=app.start_server)
     # run the thread in daemon mode so that it automatically stops when the main program exits
     server_thread.daemon = True
-    server_thread.start()
+    # server_thread.start()
     # run the receive_data method in a separate thread
     # receive_data_thread = threading.Thread(target=app.receive_data)
     # run the thread in daemon mode so that it automatically stops when the main program exits

@@ -25,7 +25,6 @@ This folder is our networking investigations, i.e. sending data around. Will inv
 
 Let me know if you need any other overview or summary of the repository! I'm happy to provide more details on specific parts as well.
 
-
 ## Hardware
 OrangePi Setup
 ssh root@192.168.0.63
