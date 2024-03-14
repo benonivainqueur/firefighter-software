@@ -6,21 +6,14 @@ import signal
 import asyncio
 import logging
 import os
-import signal
-import time
 import json
-
+import sys
 from tapsdk import TapSDK, TapInputMode
-from tapsdk.models import AirGestures
+# from tapsdk.models import AirGestures
 import os
 os.environ["PYTHONASYNCIODEBUG"] = str(1)
-import asyncio
-import platform
-import logging
+# import platform
 from bleak import _logger as logger
-import sys
-import json
-import time
 from .tools import  merge_packets
 
 global is_recording

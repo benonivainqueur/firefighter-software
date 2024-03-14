@@ -1,17 +1,14 @@
 from joblib import load
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+# from sklearn.ensemble import RandomForestClassifier
 import joblib
 # import threading
-from tapsdk import TapSDK, TapInputMode
-from tapsdk.models import AirGestures
+# from tapsdk import TapSDK, TapInputMode
+# from tapsdk.models import AirGestures
 import os
 import asyncio
 from bleak import _logger as logger
-# import sys
-# import json
 import pandas as pd
-# import matplotlib.pyplot as plt
 import sys
 import numpy as np
 # from scipy.signal import find_peaks
@@ -20,7 +17,7 @@ import time
 import __init__
 sys.path.append( sys.path[0] + "/..")
 
-from tapstrap.tools import feature_extraction, table, on_linux, rolling_feature_extraction, reshape_data, connect_to_tapstrap
+from tapstrap.tools import feature_extraction, rolling_feature_extraction, reshape_data, connect_to_tapstrap
 # from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap.tapstrap_interpolated import merge_packets
 # from  import connect_to_tapstrap
