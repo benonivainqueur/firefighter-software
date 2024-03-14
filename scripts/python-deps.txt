@@ -1,16 +1,13 @@
-
 pandas
 matplotlib
 numpy
 scipy
 tabulate
 asyncio
-
 bleak
 seaborn
 joblib
 pywifi
 schedule
-tkinter
 sklearn
-tapsdk
+asyncio
