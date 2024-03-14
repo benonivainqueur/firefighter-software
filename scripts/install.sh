@@ -5,7 +5,7 @@ echo 'export ff="/home/pi1/firefighter-software"' >> ~/.bashrc
 sudo apt-get update && sudo apt-get upgrade -y &&
 sudo apt-get install -y python3-pip && sudo apt-get install batctl &&
 git config --global --add safe.directory /home/pi1/firefighter-software 
-cd /home/pi1/firefighter-software/etc
+cd /home/pi1/firefighter-software/scripts
 pip install -r python-deps.txt
 cd /home/pi1
 
