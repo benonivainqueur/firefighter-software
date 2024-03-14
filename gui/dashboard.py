@@ -515,16 +515,11 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = DashboardApp(root)
     # run server in a separate thread
-    # app.start_server()
+    app.start_server()
     server_thread = threading.Thread(target=app.start_server)
     # run the thread in daemon mode so that it automatically stops when the main program exits
     server_thread.daemon = True
-    # server_thread.start()
-    # run the receive_data method in a separate thread
-    # receive_data_thread = threading.Thread(target=app.receive_data)
-    # run the thread in daemon mode so that it automatically stops when the main program exits
-    # receive_data_thread.daemon = True
-    # receive_data_thread.start()
+    server_thread.start()
     # run tk in main loop
 
     root.mainloop()

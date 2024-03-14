@@ -11,7 +11,7 @@ from bleak import _logger as logger
 # import sys
 # import json
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import sys
 import numpy as np
 # from scipy.signal import find_peaks
@@ -245,6 +245,7 @@ def main(hl = False,async_loop=None):
     # debug_print(os.getcwd())
      # how long the program will run for
     # get current directory
+    print("hello!")
     current_dir = os.path.dirname(os.path.realpath(__file__))
     # get the name of each model under the model directory
     # models = ["KNeighborsClassifier", "LogisticRegression", "RandomForestClassifier", "SVC"]

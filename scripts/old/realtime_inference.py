@@ -189,7 +189,7 @@ polling_window = 150 # how many readings we need to perform feature extraction a
 client = None # global variable that will hold the client
 if __name__ == "__main__":
     # print current directory
-    print(os.getcwd())
+    # print(os.getcwd())
     use_thumb = True # decides whether or not to use the thumb in the feature extraction
     run_time = 200.0 # how long the program will run for
     # get current directory
