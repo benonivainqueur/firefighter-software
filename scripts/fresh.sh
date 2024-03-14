@@ -1,5 +1,6 @@
 #! /bin/sh
 sudo systemctl stop dhcpcd.service
+sudo systemctl stop NetworkManager
 sleep 1s
 # Activate batman-adv
 sudo modprobe batman-adv
