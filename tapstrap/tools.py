@@ -439,7 +439,7 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
     else: 
         print("On Linux")
         
-        loop.set_debug(True)
+        loop.set_debug(False)
         #l = logging.getLogger("asyncio")
         #l.setLevel(logging.DEBUG)
         # h = logging.StreamHandler(sys.stdout)

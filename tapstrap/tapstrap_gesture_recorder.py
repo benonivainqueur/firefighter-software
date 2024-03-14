@@ -7,8 +7,8 @@ import logging
 import time
 import os
 import re
-import platform
-import sys
+# import platform
+# import sys
 import pandas as pd
 from bleak import _logger as logger
 from tools import feature_extraction, table, merge_packets
