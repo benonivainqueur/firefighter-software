@@ -415,6 +415,7 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
     import asyncio
     import logging 
     from bleak import _logger as logger
+    import sys
     if not on_linux():
         # from tapsdk import TapLinuxSDK
         print("Connecting to Tap Strap")
@@ -438,7 +439,7 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
     else: 
         print("On Linux")
         
-        # loop.set_debug(True)
+        loop.set_debug(True)
         #l = logging.getLogger("asyncio")
         #l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
@@ -448,11 +449,13 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
         
         tap_client = TapSDK(None,loop)
         if not await tap_client.client.connect_retrieved():
+            print("failed to connect to the device.")
             logger.error("failed to connect to the device.")
             return
         #x = await client.manager.connect_retrieved()
         #x = await client.manager.is_connected()
         #logger.info("Connected: {0}".format(x))
+        print("Connected to {}".format(tap_client.client.address))
         logger.info("Connected to {}".format(tap_client.client.address))
         await tap_client.set_input_mode(TapInputMode("controller"))
         await tap_client.register_raw_data_events(callback)
