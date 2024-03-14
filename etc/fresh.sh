@@ -1,10 +1,12 @@
 #! /bin/sh
-
+sudo systemctl stop dhcpcd.service
+sleep 1s
 # Activate batman-adv
 sudo modprobe batman-adv
 
 # Disable and configure wlan0
 sudo ip link set wlan0 down
+sleep 1s
 sudo ifconfig wlan0 mtu 1478
 sudo iwconfig wlan0 mode ad-hoc
 sudo iwconfig wlan0 essid KLOG-AD-HOC # Change this to whatever you like
@@ -19,7 +21,7 @@ sleep 1s
 sudo batctl if add wlan0
 sleep 1s
 sudo ifconfig bat0 up
-sleep 5s
+sleep 1s
 
 # Use different IPv4 addresses for each device
 sudo ifconfig bat0 172.27.0.1/16 

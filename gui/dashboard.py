@@ -65,6 +65,7 @@ class DashboardApp:
         ## SERVER ## 
         # self.server_ip = "127.0.0.1"
         self.server_ip = "192.168.0.30"
+        self.client_count = 0
 
         self.server_port = 5555
         self.server= None
