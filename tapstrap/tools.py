@@ -442,10 +442,10 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
         loop.set_debug(True)
         #l = logging.getLogger("asyncio")
         #l.setLevel(logging.DEBUG)
-        h = logging.StreamHandler(sys.stdout)
+        # h = logging.StreamHandler(sys.stdout)
         # h.setLevel(logging.WARNING)
         #l.addHandler(h)
-        logger.addHandler(h)
+        # logger.addHandler(h)
         
         tap_client = TapSDK(None,loop)
         if not await tap_client.client.connect_retrieved():
