@@ -459,9 +459,11 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
         logger.info("Connected to {}".format(tap_client.client.address))
         await tap_client.set_input_mode(TapInputMode("controller"))
         await tap_client.register_raw_data_events(callback)
-        await asyncio.sleep(timeout, True) 
         await tap_client.set_input_mode(TapInputMode("raw"))
         await tap_client.send_vibration_sequence([300,100,300])
+        await asyncio.sleep(timeout, True) 
+        print("Done")
+
 
 if __name__ == "__main__":
     pass

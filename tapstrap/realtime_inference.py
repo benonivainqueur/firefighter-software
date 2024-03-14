@@ -231,7 +231,7 @@ def main(hl = False,async_loop=None):
     headless = hl
     lstm = False
     use_thumb = True # decides whether or not to use the thumb in the feature extraction
-    run_time = 200.0
+    run_time = 30.0
     # debug_print current directory
     # while True:
     #     # debug_print("hello!")
