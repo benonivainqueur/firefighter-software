@@ -443,7 +443,7 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
         #l = logging.getLogger("asyncio")
         #l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
-        h.setLevel(logging.WARNING)
+        # h.setLevel(logging.WARNING)
         #l.addHandler(h)
         logger.addHandler(h)
         
@@ -462,7 +462,7 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
         await tap_client.set_input_mode(TapInputMode("raw"))
         await tap_client.send_vibration_sequence([300,100,300])
         await asyncio.sleep(timeout, True) 
-        print("Done")
+        
 
 
 if __name__ == "__main__":
