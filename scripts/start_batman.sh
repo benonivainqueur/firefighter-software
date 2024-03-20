@@ -1,10 +1,9 @@
 #! /bin/sh
+sudo modprobe batman-adv
 sudo systemctl stop dhcpcd.service
 sudo systemctl stop NetworkManager
 sleep 1s
 # Activate batman-adv
-sudo modprobe batman-adv
-
 # Disable and configure wlan0
 sudo ip link set wlan0 down
 sleep 1s
@@ -25,4 +24,4 @@ sudo ifconfig bat0 up
 sleep 1s
 
 # Use different IPv4 addresses for each device
-sudo ifconfig bat0 172.27.0.1/16 
+sudo ifconfig bat0 172.27.0.$PI_ID/16 

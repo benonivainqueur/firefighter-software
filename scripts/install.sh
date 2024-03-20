@@ -1,5 +1,6 @@
 
 # sudo su
+# echo 'export PI_ID=1' >> ~/.bashrc && source ~/.bashrc
 echo 'export ff="/home/pi1/firefighter-software"' >> ~/.bashrc
 # sudo chmod a+x *.sh
 sudo apt-get update && sudo apt-get upgrade -y &&
