@@ -13,3 +13,5 @@ venv/
 tapstrap/__pycache__/tapstrap_interpolated.cpython-311.pyc
 tapstrap/__pycache__/tools.cpython-311.pyc
 tapstrap/training_data/numpy/
+tapstrap/training_data/new_gestures/
+

@@ -17,7 +17,7 @@ import time
 import __init__
 sys.path.append( sys.path[0] + "/..")
 
-from tapstrap.tools import feature_extraction, rolling_feature_extraction, reshape_data, connect_to_tapstrap
+from tapstrap.tools import feature_extraction, rolling_feature_extraction, reshape_data, connect_to_tapstrap, rolling_feature_extraction2
 # from tapstrap_gesture_recorder import average_and_create_payload
 from tapstrap.tapstrap_interpolated import merge_packets
 # from  import connect_to_tapstrap
@@ -54,6 +54,28 @@ def process_interpolated_data(interpolated_data):
     df = pd.DataFrame(interpolated_data, columns=features)
     return df
 
+def generate_histogram(predictions):
+    histogram = {}
+    
+    # Count the occurrences of each prediction
+    for p in predictions:
+        for i, pred in enumerate(p):
+            if i not in histogram:
+                histogram[i] = 0
+            histogram[i] += pred
+    
+    # Find the maximum count for scaling
+    max_count = max(histogram.values())
+    
+    # Generate the histogram
+    for i in histogram:
+        histogram[i] = int(histogram[i] / max_count * 20)  # Scale to fit within 20 characters
+    
+    # Print the histogram
+    print("Prediction Histogram:")
+    for i in histogram:
+        print(f"Prediction {i}: {'*' * histogram[i]}")
+
 '''
     This function uses the current model that is loaded in, and performs inference on the given dataframe
     The dataframe should be a dataframe of features.
@@ -63,19 +85,38 @@ def perform_inference(df):
     predictions = []
     
     if lstm: 
-        df = df.dropna()
-        df = reshape_data(df, window_size=100, use_label=False)
-        # debug_print("df shape", df)
         start = time.time()
+        # df = df.fillna(0)
+        df = reshape_data(df, window_size=100, use_label=False)
+        # take the last sequence of df 
+        # df = df[-1:]
+        # take the last 5 sequences
+        # df = df[-5:]
+        # take every other sequence
+        # df = df[::5]
+        # debug_print("df shape", df)
+        print("df shape", df.shape)
         try:
             predictions = loaded_model.predict(df)
+            # predictions = loaded_model.predict(df, batch_size=1, verbose=0, steps=1, callbacks=None, max_queue_size=10, workers=2, use_multiprocessing=True )
             end = time.time()
             inf_time = end - start
             # use three decimal places
             # inf_time = round(inf_time, 3)
             debug_print(inf_time,"s")
-            debug_print("sparse", predictions)
+            # print("len predictions", len(predictions))
+            # debug_print("sparse", predictions)
+            # print out the predictions cleanly with clear decimal places
+            preds = []
+            for p in predictions:
+                preds.append({i:round(p[i],3) for i in range(len(p))})
+            
+            generate_histogram(predictions)
+            # make a histogram of bars indicating the distribution of the predictions
+                # print({i:round(p[i],3) for i in range(len(p))})
+            debug_print(preds)
             debug_print("predictions",  np.argmax(predictions, axis=1))
+            debug_print("most likely prediction", np.bincount(np.argmax(predictions, axis=1)).argmax())
             # debug_print("raw predictions", predictions)
             # debug_print("pred " ,predictions[0])
             pred = predictions[0]
@@ -147,17 +188,20 @@ def reset_arrays():
     extraction process and then inference. 
 '''
 def on_raw_data(identifier, packets):
-    if  (on_raw_data.interpol_cnt >= polling_window or on_raw_data.accel_cnt >= polling_window or on_raw_data.imu_cnt >= polling_window ):
-            # debug_print("performing inference")
+    if  (on_raw_data.interpol_cnt >= polling_window ) :#or on_raw_data.accel_cnt >= polling_window or on_raw_data.imu_cnt >= polling_window ):
+            debug_print("performing inference")
+            # fill na values with 0
         # try:
             if use_thumb:
                 start_time = time.time()
                 new_df = process_interpolated_data(timestamped_interpolated_values)
+                
                 if (lstm == True):
-                    feature_df = rolling_feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
+                    feature_df = rolling_feature_extraction2(new_df, use_label=False, interpolated = use_thumb, normalize=True)
                 else:  
                     feature_df = feature_extraction(new_df, use_label=False, interpolated = use_thumb, normalize=True)
-               
+                # print("before perfomring inf, the amount of value sin our array is", len(feature_df))
+                # print("interpol count", on_raw_data.interpol_cnt)
                 inference = perform_inference(feature_df)
                 # use a seperate thread to run inference so that we arent blocking the main thread
                 # thread = threading.Thread(target=perform_inference, args=(feature_df,))
@@ -209,7 +253,7 @@ on_raw_data.interpol_cnt = 0
 timestamped_accel_values = []
 timestamped_imu_values = []
 timestamped_interpolated_values = []
-polling_window = 50 # how many readings we need to perform feature extraction and inference
+polling_window =120 # how many readings we need to perform feature extraction and inference
 client = None # global variable that will hold the client
 
 def debug_print(*args):
@@ -228,7 +272,7 @@ def main(hl = False,async_loop=None):
     headless = hl
     lstm = False
     use_thumb = True # decides whether or not to use the thumb in the feature extraction
-    run_time = 30.0
+    run_time = 200.0
     # debug_print current directory
     # while True:
     #     # debug_print("hello!")

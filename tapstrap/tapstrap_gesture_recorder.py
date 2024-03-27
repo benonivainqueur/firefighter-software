@@ -36,7 +36,7 @@ merged_values = []
 global first_iteration
 first_iteration = True
 global base_path
-base_path = 'tapstrap/training_data/fast_finger_taps'
+base_path = 'tapstrap/training_data/new_gestures'
 
 def OnRawData(identifier, packets):
     if is_recording:
@@ -155,7 +155,8 @@ def record_data():
     #         # label_tuples[folder_name] = 0
     old_gesture_name = ''
     auto_mode = True
-    gesture_name = 'd'
+    gesture_name = 'repeat'
+    sample_cutoff = 200
     print("Type 'auto' and your gesture name following it to enable auto mode... 'auto wave' for example")
     while True:
         # if (not automate_collection):
@@ -206,7 +207,7 @@ def record_data():
                     print("Recording...", OnRawData.imu_cnt)
                 time.sleep(0.1)
                 # stop recording after 100 entries 
-                if OnRawData.imu_cnt > 100:
+                if OnRawData.imu_cnt > sample_cutoff:
                     is_recording = False
                     
             # if the owrd turn is in the gesture name, then set the label to 1

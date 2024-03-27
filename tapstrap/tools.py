@@ -90,6 +90,61 @@ def rolling_feature_extraction(new_dataframe, use_label, interpolated = False, n
     # print('SHAPE:', data_df.shape)
     return new_df
 
+def rolling_feature_extraction2(new_dataframe, use_label, interpolated = False, normalize=False,assign_label=None):
+    """
+    Extracts rolling features from a given dataframe.
+
+    Parameters:
+    new_dataframe (pd.DataFrame): The input dataframe.
+    use_label (bool): Flag indicating whether to include the label in the output dataframe.
+    interpolated (bool, optional): Flag indicating whether the dataframe contains interpolated data. Defaults to False.
+    normalize (bool, optional): Flag indicating whether to normalize the data. Defaults to False.
+    assign_label (int, optional): The label to assign to the output dataframe. Defaults to None.
+
+    Returns:
+    pd.DataFrame: The dataframe with rolling features extracted.
+    """
+    # supress warnings
+    features = ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
+                'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z']
+
+    fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
+    if interpolated:
+        imu_features = ['thumb_imu_x', 'thumb_imu_y', 'thumb_imu_z', 'thumb_imu_pitch', 'thumb_imu_yaw', 'thumb_imu_roll']
+
+        features = imu_features +  ['thumb_x', 'thumb_y', 'thumb_z', 'index_x', 'index_y', 'index_z', 'middle_x', 'middle_y', 'middle_z',
+                'ring_x', 'ring_y', 'ring_z', 'pinky_x', 'pinky_y', 'pinky_z'] 
+
+    # Average acceleration per axis
+    
+    new_df = pd.DataFrame()
+    new_df = new_dataframe[features]
+    rolling_data_frames = []
+    # print("num nans:", new_df.isnull().sum().sum())
+    cols = new_df.columns.tolist()
+    window_size = 15
+
+    if normalize:
+        new_dataframe[features] = new_dataframe[features].apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+    # for feature in features:
+        # new_df['{}_rolling_mean'.format(feature)] = new_df[feature].rolling(window=window_size).mean()
+        # new_df['{}_rolling_std'.format(feature)] = new_df[feature].rolling(window=window_size).std()
+        # new_df['{}_rolling_variance'.format(feature)] = new_df[feature].rolling(window=window_size).var()
+        # new_df['{}_rolling_derivative'.format(feature)] = new_df['{}'.format(feature)].diff()
+    
+
+
+    if(use_label):
+        new_df['label'] = new_dataframe['label'][0]  # this will either be 0 or 1
+    
+    if (assign_label != None ):
+        new_df['label'] = assign_label
+    # drop first n rows where n is the window size
+    new_df = new_df[window_size:]
+
+    # table(data_df)
+    # print('SHAPE:', data_df.shape)
+    return new_df
 
 
 def reshape_data(data, window_size=100, use_label=False):
