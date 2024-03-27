@@ -12,3 +12,4 @@ venv/
 # **/__pycache__/
 tapstrap/__pycache__/tapstrap_interpolated.cpython-311.pyc
 tapstrap/__pycache__/tools.cpython-311.pyc
+tapstrap/training_data/numpy/
