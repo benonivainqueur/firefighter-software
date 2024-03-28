@@ -8,3 +8,4 @@ echo "export PI_ID=$num" >> ~/.bashrc
 
 # Print a success message
 echo "The number $num has been exported as PI_ID to .bashrc"
+
