@@ -1,12 +1,12 @@
 # could be a different command if you are using a different OS on your RPi
-sudo systemctl stop dhcpcd 
+sudo systemctl stop NetworkManager 
 
 # Use your own interface name if its not wlan1
-sudo iwconfig wlan1 mode Ad-Hoc
+sudo iwconfig wlan0 mode Ad-Hoc
 
 # Use your own interface name if its not wlan1
 # you can change the name of your network here
-sudo iwconfig wlan1 essid "TurtleAdHoc"
+sudo iwconfig wlan0 essid "TurtleAdHoc"
 
 ###############################################
 # EDIT MADE HERE
@@ -16,8 +16,8 @@ sudo iwconfig wlan1 essid "TurtleAdHoc"
 ###############################################
 # Use your own interface name if its not wlan1
 # sudo ifconfig wlan1 192.168.7.3 netmask 255.255.255.0 up
-sudo ifconfig wlan1 172.27.0.$PI_ID/16  netmask 255.255.255.0 up
+sudo ifconfig wlan0 172.27.0.$PI_ID/16  netmask 255.255.255.0 up
 
 #sudo olsrd -i wlan1
 
-sudo olsrd -i wlan1
+sudo olsrd -i wlan0
