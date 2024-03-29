@@ -8,33 +8,19 @@ from time import ctime
 def run_iperf_test():
     iperf_output = subprocess.run(['iperf3', '-c', 'server_ip', '--json'], capture_output=True)
     return iperf_output.stdout.decode("utf-8")
+# Function to execute command received from server
 
-# Function to send iperf3 and ping data to server
-def send_data_to_server(server_ip, server_port, iperf_data, ping_data):
-    # Create a socket object
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+def execute_command(command):
     try:
-        # Connect to the server
-        client_socket.connect((server_ip, server_port))
-
-        # Combine iperf3 and ping data into a single JSON object
-        combined_data = {"iperf": json.loads(iperf_data), "ping": ping_data}
-        
-        # Convert the combined data to JSON string
-        json_data = json.dumps(combined_data)
-
-        # Send the combined data to the server
-        client_socket.sendall(json_data.encode("utf-8"))
-        print("Data sent to server successfully.")
+        # Execute the command using subprocess
+        print("Executing command:", command)
+        # subprocess.run(command, shell=True)
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error executing command: {e}")
 
-    finally:
-        # Close the socket
-        client_socket.close()
-
+# Function to send iperf3 and ping data to server
+# 
 # Function to synchronize clocks using NTP
 def synchronize_clocks():
     # Get NTP server address
@@ -146,79 +132,123 @@ def detect_neighbors_olsr():
 # olsr_neighbors = detect_neighbors_olsr()
 # print("OLSR Neighbors:", olsr_neighbors)
     
-def main():
-    # Define server IP address and port
-    server_ip = '172.27.0.0'  # Replace 'server_ip' with the actual server's IP address
-    server_port = 12345  # Server's port number
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Bind the socket to the server IP address and port
-    # server_socket.bind((server_ip, server_port))
-    server_socket.connect((server_ip, server_port))
-    while True:
-        # get message from server
-        server_socket.send("ready".encode())
-        # print("Server is listening for incoming connections...")
-        command = server_socket.recv(4096).decode("utf-8")
-        print("Command received:", command)
-            # Execute the command
-        execute_command(command)
-        # Run iperf3 test and collect output
-        iperf_data = run_iperf_test()
+# def main():
+#     # Define server IP address and port
+#     # server_ip = '172.27.0.0'  # Replace 'server_ip' with the actual server's IP address
+#     server_ip = '192.168.0.30'  # Listen on all available interfaces
 
-        # Synchronize clocks after each test
-        synchronize_clocks()
+#     server_port = 12345  # Server's port number
+#     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     # Bind the socket to the server IP address and port
+#     # server_socket.bind((server_ip, server_port))
+#     server_socket.connect((server_ip, server_port))
+#     while True:
+#         # get message from server
+#         print("awaiting command...")
+#         # server_socket.send("ready".encode())
+#         # print("Server is listening for incoming connections...")
+#         # await command from server
+#         command = server_socket.recv(4096).decode("utf-8")
+#         print("Command received:", command)
+#             # Execute the command
+#         execute_command(command)
+#         # Run iperf3 test and collect output
+#         # iperf_data = run_iperf_test()
 
-        # Ping detected neighbors
-        detected_neighbors = detect_neighbors_batman()
-        print("Detected Neighbors:", detected_neighbors)
-        # detected_neighbors = ['neighbor1_ip', 'neighbor2_ip', 'neighbor3_ip']  # List of detected neighbor IP addresses
-        ping_data = ping_neighbors(detected_neighbors)
+#         # Synchronize clocks after each test
+#         # synchronize_clocks()
 
-        # Send iperf3 and ping data to server
-        send_data_to_server(server_ip, server_port, iperf_data, ping_data)
+#         # Ping detected neighbors
+#         # detected_neighbors = detect_neighbors_batman()
+#         # print("Detected Neighbors:", detected_neighbors)
+#         # detected_neighbors = ['neighbor1_ip', 'neighbor2_ip', 'neighbor3_ip']  # List of detected neighbor IP addresses
+#         # ping_data = ping_neighbors(detected_neighbors)
+#         # create dummy iperf and ping data
+#         iperf_data = "test"
+#         ping_data = "test ping"
+#         # Send iperf3 and ping data to server
+#         send_data_to_server(server_socket, iperf_data, ping_data)
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 
 import socket
 import subprocess
+import subprocess
+import socket
+import json
+
+# Function to run iperf3 test and collect output
+def run_iperf_test():
+    try :
+        # Run iperf3 test and capture the output
+        iperf_output = subprocess.run(['iperf3', '-c', 'server_ip', '--json'], capture_output=True)
+        return iperf_output.stdout.decode("utf-8")
+    except Exception as e:
+        print(f"Error running iperf3 test: {e}")
+        return None
+    
+    # iperf_output = subprocess.run(['iperf3', '-c', 'server_ip', '--json'], capture_output=True)
+    # return iperf_output.stdout.decode("utf-8")
 
 # Function to execute command received from server
 def execute_command(command):
     try:
         # Execute the command using subprocess
+        print("Executing command:", command)
         subprocess.run(command, shell=True)
 
     except Exception as e:
         print(f"Error executing command: {e}")
 
-# def main():
+# Function to send data to server
+def send_data_to_server(server_socket, data):
+    try:
+        # Convert data to JSON string
+        json_data = json.dumps(data)
+
+        # Send the data to the server
+        server_socket.sendall(json_data.encode())
+        print("Data sent to server successfully.")
+
+    except Exception as e:
+        print(f"Error sending data to server: {e}")
+
+# Main function
+def main():
     # Define server IP address and port
-#     server_ip = 'server_ip'  # Replace 'server_ip' with the actual server's IP address
-#     server_port = 12345  # Server's port number
+    server_ip = '172.27.0.0'  # Replace 'server_ip' with the actual server's IP address
+    server_port = 12345  # Server's port number
 
-#     # Create a socket object
+    # Create a socket object
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-#     while True:
-#         # Accept incoming connection
-#         client_socket, client_address = server_socket.accept()
-#         print(f"Connection established with {client_address}")
+    try:
+        # Connect to the server
+        client_socket.connect((server_ip, server_port))
+        print("Connected to server.")
 
-#         try:
+        while True:
+            # Receive command from server
+            command = client_socket.recv(4096).decode("utf-8")
+            print("Command received from server:", command)
 
-#             # Receive command from the server
-#             command = client_socket.recv(4096).decode("utf-8")
+            # Execute the command
+            execute_command(command)
 
-#         except Exception as e:
-#             print(f"Error: {e}")
+            # Run iperf3 test and collect output
+            iperf_data = run_iperf_test()
 
-#         finally:
-#             # Close the client socket
-#             client_socket.close()
+            # Send iperf3 data to server
+            send_data_to_server(client_socket, iperf_data)
 
-#     # Close the server socket
-#     server_socket.close()
+    except Exception as e:
+        print(f"Error: {e}")
 
-# if __name__ == "__main__":
-#     main()
+    finally:
+        # Close the socket
+        client_socket.close()
+
+if __name__ == "__main__":
+    main()
