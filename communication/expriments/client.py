@@ -215,40 +215,43 @@ def send_data_to_server(server_socket, data):
     except Exception as e:
         print(f"Error sending data to server: {e}")
 
-# Main function
 def main():
     # Define server IP address and port
     server_ip = '172.27.0.0'  # Replace 'server_ip' with the actual server's IP address
     server_port = 12345  # Server's port number
 
-    # Create a socket object
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while True:
+        try:
+            # Create a socket object
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    try:
-        # Connect to the server
-        client_socket.connect((server_ip, server_port))
-        print("Connected to server.")
+            # Connect to the server
+            client_socket.connect((server_ip, server_port))
+            print("Connected to server.")
 
-        while True:
-            # Receive command from server
-            command = client_socket.recv(4096).decode("utf-8")
-            print("Command received from server:", command)
+            while True:
+                # Receive command from server
+                command = client_socket.recv(4096).decode("utf-8")
+                print("Command received from server:", command)
 
-            # Execute the command
-            execute_command(command)
+                # Execute the command
+                execute_command(command)
 
-            # Run iperf3 test and collect output
-            iperf_data = run_iperf_test()
+                # Run iperf3 test and collect output
+                iperf_data = run_iperf_test()
 
-            # Send iperf3 data to server
-            send_data_to_server(client_socket, iperf_data)
+                # Send iperf3 data to server
+                send_data_to_server(client_socket, iperf_data)
 
-    except Exception as e:
-        print(f"Error: {e}")
+        except Exception as e:
+            print(f"Error: {e}")
+            print("Reconnecting to the server in 5 seconds...")
+            time.sleep(5)
 
-    finally:
-        # Close the socket
-        client_socket.close()
+        finally:
+            # Close the socket
+            if client_socket:
+                client_socket.close()
 
 if __name__ == "__main__":
     main()
