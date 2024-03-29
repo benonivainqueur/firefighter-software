@@ -37,9 +37,9 @@ rfkill unblock wlan
 
 #! /bin/sh
 sudo modprobe batman-adv
-sudo systemctl stop dhcpcd.service
-sudo systemctl stop NetworkManager
-sleep 1s
+# sudo systemctl stop dhcpcd.service
+# sudo systemctl stop NetworkManager
+# sleep 1s
 # Activate batman-adv
 # Disable and configure wlan0
 sudo ip link set wlan0 down
