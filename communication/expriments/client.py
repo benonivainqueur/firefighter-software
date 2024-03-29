@@ -2,6 +2,7 @@ import subprocess
 import socket
 import ntplib
 import json
+import time
 from time import ctime
 
 # Function to run iperf3 test and collect output
