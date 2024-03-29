@@ -152,7 +152,8 @@ def main():
     server_port = 12345  # Server's port number
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Bind the socket to the server IP address and port
-    server_socket.bind((server_ip, server_port))
+    # server_socket.bind((server_ip, server_port))
+    server_socket.connect((server_ip, server_port))
     while True:
         server_socket.listen(1)
         print("Server is listening for incoming connections...")
