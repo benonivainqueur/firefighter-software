@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 import time
 import os
-
+# 192.168.0.71
 class Client:
     def __init__(self):
         self.host = "192.168.0.30"
