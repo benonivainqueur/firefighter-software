@@ -157,6 +157,7 @@ def main():
         server_socket.listen(1)
         print("Server is listening for incoming connections...")
         command = server_socket.recv(4096).decode("utf-8")
+        print("Command received:", command)
             # Execute the command
         execute_command(command)
         # Run iperf3 test and collect output
@@ -190,35 +191,32 @@ def execute_command(command):
     except Exception as e:
         print(f"Error executing command: {e}")
 
-def main():
+# def main():
     # Define server IP address and port
-    server_ip = 'server_ip'  # Replace 'server_ip' with the actual server's IP address
-    server_port = 12345  # Server's port number
+#     server_ip = 'server_ip'  # Replace 'server_ip' with the actual server's IP address
+#     server_port = 12345  # Server's port number
 
-    # Create a socket object
-  
+#     # Create a socket object
 
+#     while True:
+#         # Accept incoming connection
+#         client_socket, client_address = server_socket.accept()
+#         print(f"Connection established with {client_address}")
 
+#         try:
 
-  
-    while True:
-        # Accept incoming connection
-        client_socket, client_address = server_socket.accept()
-        print(f"Connection established with {client_address}")
+#             # Receive command from the server
+#             command = client_socket.recv(4096).decode("utf-8")
 
-        try:
-            # Receive command from the server
-           
+#         except Exception as e:
+#             print(f"Error: {e}")
 
-        except Exception as e:
-            print(f"Error: {e}")
+#         finally:
+#             # Close the client socket
+#             client_socket.close()
 
-        finally:
-            # Close the client socket
-            client_socket.close()
+#     # Close the server socket
+#     server_socket.close()
 
-    # Close the server socket
-    server_socket.close()
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
