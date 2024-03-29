@@ -19,7 +19,7 @@ def send_command_to_nodes(command, nodes):
             client_socket.close()
 
         except Exception as e:
-            print(f"Error sending command to node {node['ip']}: {e}")
+            print(f"Error: {e}")
 
 # Function to save received data to files
 def save_data_to_files(data, client_address):
