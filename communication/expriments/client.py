@@ -23,11 +23,15 @@ def run_iperf_test():
 def execute_command(command):
     try:
         # Execute the command using subprocess
+        # remove \n from the command
+        command = command.strip()
         print("executing command:", command, "on pi#", pi_id)
         output =  ''
         # if command == "batman":
         print("Executing batman command on pi#", pi_id)
         output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
+        # get raw string from output
+        output = output.stdout.decode("utf-8")
         # elif command == "olsr":
             # output = subprocess.run(['./start_olsr.sh'], capture_output=True)
         # elif command == "iperf":
