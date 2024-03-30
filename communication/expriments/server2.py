@@ -30,7 +30,7 @@ def handle_client(connection, client_address):
                 data += message
                 if message.contains("[end-data]"):
                     recieving = False
-                    print(data)
+                    print("final data recieved:", data)
                     data = ""
 
     except Exception as e:
