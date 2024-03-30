@@ -1,4 +1,5 @@
 import socket
+import subprocess
 import threading
 
 # Global dictionary to store client connections and their addresses
@@ -41,6 +42,11 @@ def handle_client(connection, client_address):
         connection.close()
         del client_connections[connection]
 
+def run_iperf_server():
+    # Start the iperf3 server
+    iperf_server = subprocess.Popen(["./iperf_server.sh"])
+    print("iperf3 server started")
+
 def broadcast_command(command):
     # Send the command to all connected clients
     for connection, client_address in client_connections.items():
@@ -78,6 +84,10 @@ def server():
         # Start the input thread
         input_thread_handle = threading.Thread(target=input_thread)
         input_thread_handle.start()
+
+        # run iperf3 server in another thread
+        iperf_server_thread = threading.Thread(target=run_iperf_server)
+        iperf_server_thread.start()
 
         while True:
             # Wait for a connection

@@ -25,13 +25,14 @@ def execute_command(command):
         # Execute the command using subprocess
         print("executing command:", command, "on pi#", pi_id)
         output =  ''
-        if command == "batman":
-            print("Executing batman command on pi#", pi_id)
-            output = subprocess.run(['./interface', command ], capture_output=True)
-        elif command == "olsr":
-            output = subprocess.run(['./start_olsr.sh'], capture_output=True)
-        elif command == "iperf":
-            
+        # if command == "batman":
+        print("Executing batman command on pi#", pi_id)
+        output = subprocess.run(['./interface', command ], capture_output=True)
+        # elif command == "olsr":
+            # output = subprocess.run(['./start_olsr.sh'], capture_output=True)
+        # elif command == "iperf":
+            # output = subprocess.run(['./run_iperf.sh'], capture_output=True)
+
         # subprocess.run(command, shell=True)
         print("output:", output)
 

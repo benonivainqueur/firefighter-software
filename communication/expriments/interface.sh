@@ -9,7 +9,7 @@ start_interface() {
         ./start_batman.sh
     elif [ "$1" == "iperf" ]; then
         # cd ~/firefighter-software/scripts
-        ./iperf_server.sh
+        ./run_iperf.sh
     else
         echo "Invalid interface type. Please enter either 'olsr' or 'batman'."
     fi
