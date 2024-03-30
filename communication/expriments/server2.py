@@ -1,10 +1,57 @@
 import socket
 import subprocess
 import threading
+import json
+import os 
 
 # Global dictionary to store client connections and their addresses
 client_connections = {}
+def clean_json(data):
+    # remove [START] and [END] from data
+    ping_index = data.find("PING")
+    json_string = data[:ping_index]
+    ping = data[ping_index:]
+    # save ping data to file called ping.txt
+    with open("ping.txt", "w") as f:
+        f.write(ping)
+    # save json to file called data.json
+    # remove " at the beginning and end of the string
+    # replace \n and \t with ""
 
+    json_string = json_string.replace("\\n", "")
+    json_string = json_string.replace("\\t", "")
+    json_string = json_string.replace("\\", "")
+    json_string = json_string[1:]
+
+    print("CLEANED JSON:", json_string)
+    # json_string = json_string[1:-1]
+    
+    json_data = json.loads(json_string)
+    # replace all \n and \t in string
+    
+    # print("JSON DATA: \n")
+    # save json to file called data.json
+    # use os to see the 
+    # get the number of files in the folder for the corresponding client
+    client_id = json_data["start"]["connected"]["local_host"]
+    print("client_id:", client_id)
+    # get last number in the client id
+    client_id = client_id[-1]
+    num_files = len(os.listdir("./pi" + client_id))
+    # save json to file called data.json
+    with open("./pi" + client_id + "/data" + str(num_files) + ".json", "w") as f:
+        # save json_data
+        json.dump(json_data, f,indent=4)
+
+
+    # with open("data.json", "w") as f:
+    #     # save json_data
+    #     json.dump(json_data, f)
+    # save json to file called data.json
+    # with open("data.json", "w") as f:
+    #     f.write(data)
+
+    return data
 def handle_client(connection, client_address):
     try:
         print("Connection established with", client_address)
@@ -18,21 +65,23 @@ def handle_client(connection, client_address):
             message = connection.recv(1024).decode()
             if not message:
                 break
-
-            print(f"Received message from {client_address}: {message}")
-            if message == "disconnecting":
-                break
+            # print(f"Received message from {client_address}: {message}")
+            # if message == "disconnecting":
+            #     break
             if "[START]" in message:
-                # get pi id from the message
-                # we need to start receiving the batman data until we reach the end 
                 recieving = True
                 data += message
             if recieving:
                 data += message
-                if "[END]" in message:
-                    recieving = False
-                    print("final data recieved:", data)
-                    data = ""
+            if "[END]" in message:
+                data += message
+                recieving = False
+                # remove [START] and [END] from data
+                data = data.replace("[START]", "")
+                data = data.replace("[END]", "")
+                # print("final data recieved:", data)
+                clean_json(data)
+                data = ""   
 
     except Exception as e:
         print(f"Error handling client connection: {e}")
@@ -44,7 +93,7 @@ def handle_client(connection, client_address):
 
 def run_iperf_server():
     # Start the iperf3 server
-    iperf_server = subprocess.Popen(["./iperf_server.sh"])
+    iperf_server = subprocess.Popen([bash, "run_iperf.sh"])
     print("iperf3 server started")
 
 def broadcast_command(command):
@@ -86,8 +135,8 @@ def server():
         input_thread_handle.start()
 
         # run iperf3 server in another thread
-        iperf_server_thread = threading.Thread(target=run_iperf_server)
-        iperf_server_thread.start()
+        # iperf_server_thread = threading.Thread(target=run_iperf_server)
+        # iperf_server_thread.start()
 
         while True:
             # Wait for a connection

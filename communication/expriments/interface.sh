@@ -19,4 +19,4 @@ start_interface() {
 }
 # stop interface
 start_interface $1 
-ping -c 3 172.27.0.0
+ping -c 3 172.27.0.0 
