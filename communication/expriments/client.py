@@ -185,7 +185,11 @@ def send_data_to_server(server_socket, data):
         json_data = json.dumps(data)
 
         # Send the data to the server
+        #send "[START]" to indicate the start of the data
+        server_socket.sendall("[START]".encode())
         server_socket.sendall(json_data.encode())
+        # send "[END]" to indicate the end of the data
+        server_socket.sendall("[END]".encode())
         print("Data sent to server successfully.")
 
     except Exception as e:

@@ -1,7 +1,9 @@
 # start interface
 # takes in a string, either olsr or batman
+# ping $IP for 3 seconds
+
 start_interface() {
-    echo "Starting interface.... recieving $1 as argument."
+    # echo "Starting interface.... recieving $1 as argument."
     if [ "$1" == "olsr" ]; then
         cd ~/firefighter-software/scripts
         ./start_olsr.sh
@@ -16,4 +18,5 @@ start_interface() {
     fi
 }
 # stop interface
-start_interface $1
+start_interface $1 
+ping -c 3 172.27.0.0
