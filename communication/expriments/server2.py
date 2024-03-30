@@ -12,8 +12,7 @@ def clean_json(data):
     json_string = data[:ping_index]
     ping = data[ping_index:]
     # save ping data to file called ping.txt
-    with open("ping.txt", "w") as f:
-        f.write(ping)
+ 
     # save json to file called data.json
     # remove " at the beginning and end of the string
     # replace \n and \t with ""
@@ -42,6 +41,9 @@ def clean_json(data):
     with open("./pi" + client_id + "/data" + str(num_files) + ".json", "w") as f:
         # save json_data
         json.dump(json_data, f,indent=4)
+    # put ping data in the same folder
+    with open("./pi" + client_id + "/ping" + str(num_files) + ".txt", "w") as f:
+        f.write(ping)
 
 
     # with open("data.json", "w") as f:
