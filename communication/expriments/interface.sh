@@ -15,6 +15,5 @@ start_interface() {
         echo "Invalid interface type. Please enter either 'olsr' or 'batman'."
     fi
 }
-
 # stop interface
-start_interface
+start_interface $1

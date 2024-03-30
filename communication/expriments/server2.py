@@ -29,7 +29,7 @@ def handle_client(connection, client_address):
                 data += message
             if recieving:
                 data += message
-                if message.contains("[end-data]"):
+                if "[end-data]" in message:
                     recieving = False
                     print("final data recieved:", data)
                     data = ""
@@ -103,6 +103,7 @@ def server():
 
     finally:
         # Close the server socket
+        print("Closing server socket...")
         server_socket.close()
 
 if __name__ == "__main__":

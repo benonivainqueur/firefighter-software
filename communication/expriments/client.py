@@ -28,7 +28,6 @@ def execute_command(command):
         print("executing command:", command, "on pi#", pi_id)
         output =  ''
         # if command == "batman":
-        print("Executing batman command on pi#", pi_id)
         output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
         # get raw string from output
         output = output.stdout.decode("utf-8")
