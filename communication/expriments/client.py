@@ -205,17 +205,18 @@ def main():
             while True:
                 # Receive command from server
                 command = client_socket.recv(4096).decode("utf-8")
-                print("Command received from server:", command)
+                if command:
+                    print("Command received:", command)
 
                 # Execute the command
-                data = execute_command(command)
+                    data = execute_command(command)
 
 
                 # Run iperf3 test and collect output
                 # iperf_data = run_iperf_test()
 
                 # Send iperf3 data to server
-                send_data_to_server(client_socket, data)
+                    send_data_to_server(client_socket, data)
 
         except Exception as e:
             print(f"Error: {e}")

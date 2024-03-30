@@ -4,7 +4,9 @@
 if [ $PI_ID -eq 0 ]; then
     iperf3 -s -p 54321
 else
-    iperf3 -c 172.27.0.0 -p 54321 -t 10 -J --bidir --timestamps > iperf_client.txt
+    iperf3 -c 172.27.0.0 -p 54321 -t 10 -J --bidir --timestamps 
+    #   iperf3 -c 172.27.0.0 -p 54321 -t 10 -J --bidir --timestamps > iperf_client.txt
+    
 fi
 
 # send the iperf_client.txt file to the server 
