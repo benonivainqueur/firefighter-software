@@ -4,21 +4,21 @@
 setup_batman_adv() {
     sudo modprobe batman-adv
     sudo systemctl stop NetworkManager
-    sleep 1s
+    sleep .5
     sudo ip link set wlan0 down
-    sleep 1s
+    sleep .5
     sudo ifconfig wlan0 mtu 1478
     sudo iwconfig wlan0 mode ad-hoc
     sudo iwconfig wlan0 essid KLOG-AD-HOC # Change this to whatever you like
     # sudo iwconfig wlan0 ap 02:12:34:56:78:9A
     sudo iwconfig wlan0 channel 1
-    sleep 1s
+    sleep .5
     sudo ip link set wlan0 up
-    sleep 1s
+    sleep .5
     sudo batctl if add wlan0
-    sleep 1s
+    sleep .5
     sudo ifconfig bat0 up
-    sleep 1s
+    sleep .5
     sudo ifconfig bat0 172.27.0.$PI_ID/16
 }
 

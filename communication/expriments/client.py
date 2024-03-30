@@ -35,6 +35,7 @@ def execute_command(command):
 
         # subprocess.run(command, shell=True)
         print("output:", output)
+        return output
 
     except Exception as e:
         print(f"Error executing command: {e}")
@@ -165,14 +166,14 @@ def run_iperf_test():
     # return iperf_output.stdout.decode("utf-8")
 
 # Function to execute command received from server
-def execute_command(command):
-    try:
-        # Execute the command using subprocess
-        print("Executing command:", command)
-        subprocess.run(command, shell=True)
+# def execute_command(command):
+#     try:
+#         # Execute the command using subprocess
+#         print("Executing command:", command)
+#         subprocess.run(command, shell=True)
 
-    except Exception as e:
-        print(f"Error executing command: {e}")
+#     except Exception as e:
+#         print(f"Error executing command: {e}")
 
 # Function to send data to server
 def send_data_to_server(server_socket, data):
@@ -207,13 +208,14 @@ def main():
                 print("Command received from server:", command)
 
                 # Execute the command
-                execute_command(command)
+                data = execute_command(command)
+
 
                 # Run iperf3 test and collect output
-                iperf_data = run_iperf_test()
+                # iperf_data = run_iperf_test()
 
                 # Send iperf3 data to server
-                send_data_to_server(client_socket, iperf_data)
+                send_data_to_server(client_socket, data)
 
         except Exception as e:
             print(f"Error: {e}")
