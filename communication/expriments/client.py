@@ -27,7 +27,7 @@ def execute_command(command):
         output =  ''
         # if command == "batman":
         print("Executing batman command on pi#", pi_id)
-        output = subprocess.run(['./interface.sh', command ], capture_output=True)
+        output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
         # elif command == "olsr":
             # output = subprocess.run(['./start_olsr.sh'], capture_output=True)
         # elif command == "iperf":
@@ -220,8 +220,8 @@ def main():
 
         except Exception as e:
             print(f"Error: {e}")
-            print("Reconnecting to the server in 5 seconds...")
-            time.sleep(5)
+            print("Reconnecting to the server in 1 second...")
+            time.sleep(1)
 
         finally:
             # Close the socket
