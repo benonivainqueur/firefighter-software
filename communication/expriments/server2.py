@@ -10,7 +10,8 @@ def handle_client(connection, client_address):
 
         # Add client connection to the global dictionary
         client_connections[connection] = client_address
-
+        data = ""
+        recieving = False
         while True:
             # Wait for incoming messages from the client
             message = connection.recv(1024).decode()
@@ -18,6 +19,19 @@ def handle_client(connection, client_address):
                 break
 
             print(f"Received message from {client_address}: {message}")
+            if message == "disconnecting":
+                break
+            if message.contains("[collecting batman]") or message.contains("[collecting olsr]" ):
+                # get pi id from the message
+                # we need to start receiving the batman data until we reach the end 
+                recieving = True
+                data += message
+            if recieving:
+                data += message
+                if message.contains("[end-data]"):
+                    recieving = False
+                    print(data)
+                    data = ""
 
     except Exception as e:
         print(f"Error handling client connection: {e}")
@@ -31,14 +45,18 @@ def broadcast_command(command):
     # Send the command to all connected clients
     for connection, client_address in client_connections.items():
         try:
-            connection.sendall(f"[Server]: {command}\n".encode())
+            connection.sendall(f"{command}\n".encode())
         except Exception as e:
             print(f"Error sending command to {client_address}: {e}")
+
+command_list = [("batman", "./start_batman.sh"), ("iperf", "iperf3 -c server_ip -t 10")]
 
 def input_thread():
     # Read command from server console and broadcast it to all clients
     while True:
         command = input("Enter command to broadcast: ")
+        # switch statement to execute the command
+     
         broadcast_command(command)
 
 def server():

@@ -62,5 +62,6 @@ https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=BAT
 
 BATMAN NS3 sim:https://www.youtube.com/watch?v=wZMTW7vw05Q&ab_channel=NS3simulations
 
-
+# BAT HOSTS
+sudo nano /etc/bat/hosts
 - Benoni Vainqueur 

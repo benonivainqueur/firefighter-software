@@ -10,7 +10,7 @@ setup_batman_adv() {
     sudo ifconfig wlan0 mtu 1478
     sudo iwconfig wlan0 mode ad-hoc
     sudo iwconfig wlan0 essid KLOG-AD-HOC # Change this to whatever you like
-    sudo iwconfig wlan0 ap 02:12:34:56:78:9A
+    # sudo iwconfig wlan0 ap 02:12:34:56:78:9A
     sudo iwconfig wlan0 channel 1
     sleep 1s
     sudo ip link set wlan0 up
@@ -25,7 +25,7 @@ setup_batman_adv() {
 # Function to execute the setup and handle errors
 setup_with_retry() {
     local retry_count=0
-    local max_retries=3
+    local max_retries=10
     local retry_delay=5
 
     while true; do

@@ -4,7 +4,16 @@ import ntplib
 import json
 import time
 from time import ctime
+import os 
 
+import socket
+import subprocess
+import subprocess
+import socket
+import json
+
+# get $PI_ID
+pi_id = os.environ.get("PI_ID")
 # Function to run iperf3 test and collect output
 def run_iperf_test():
     iperf_output = subprocess.run(['iperf3', '-c', 'server_ip', '--json'], capture_output=True)
@@ -14,8 +23,17 @@ def run_iperf_test():
 def execute_command(command):
     try:
         # Execute the command using subprocess
-        print("Executing command:", command)
+        print("executing command:", command, "on pi#", pi_id)
+        output =  ''
+        if command == "batman":
+            print("Executing batman command on pi#", pi_id)
+            output = subprocess.run(['./interface', command ], capture_output=True)
+        elif command == "olsr":
+            output = subprocess.run(['./start_olsr.sh'], capture_output=True)
+        elif command == "iperf":
+            
         # subprocess.run(command, shell=True)
+        print("output:", output)
 
     except Exception as e:
         print(f"Error executing command: {e}")
@@ -129,62 +147,14 @@ def detect_neighbors_olsr():
         print(f"Error detecting neighbors using OLSR: {e}")
         return []
 
-# # Example usage:
-# olsr_neighbors = detect_neighbors_olsr()
-# print("OLSR Neighbors:", olsr_neighbors)
-    
-# def main():
-#     # Define server IP address and port
-#     # server_ip = '172.27.0.0'  # Replace 'server_ip' with the actual server's IP address
-#     server_ip = '192.168.0.30'  # Listen on all available interfaces
-
-#     server_port = 12345  # Server's port number
-#     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     # Bind the socket to the server IP address and port
-#     # server_socket.bind((server_ip, server_port))
-#     server_socket.connect((server_ip, server_port))
-#     while True:
-#         # get message from server
-#         print("awaiting command...")
-#         # server_socket.send("ready".encode())
-#         # print("Server is listening for incoming connections...")
-#         # await command from server
-#         command = server_socket.recv(4096).decode("utf-8")
-#         print("Command received:", command)
-#             # Execute the command
-#         execute_command(command)
-#         # Run iperf3 test and collect output
-#         # iperf_data = run_iperf_test()
-
-#         # Synchronize clocks after each test
-#         # synchronize_clocks()
-
-#         # Ping detected neighbors
-#         # detected_neighbors = detect_neighbors_batman()
-#         # print("Detected Neighbors:", detected_neighbors)
-#         # detected_neighbors = ['neighbor1_ip', 'neighbor2_ip', 'neighbor3_ip']  # List of detected neighbor IP addresses
-#         # ping_data = ping_neighbors(detected_neighbors)
-#         # create dummy iperf and ping data
-#         iperf_data = "test"
-#         ping_data = "test ping"
-#         # Send iperf3 and ping data to server
-#         send_data_to_server(server_socket, iperf_data, ping_data)
-
-# if __name__ == "__main__":
-#     main()
-
-
-import socket
-import subprocess
-import subprocess
-import socket
-import json
 
 # Function to run iperf3 test and collect output
 def run_iperf_test():
     try :
         # Run iperf3 test and capture the output
-        iperf_output = subprocess.run(['iperf3', '-c', 'server_ip', '--json'], capture_output=True)
+        # iperf_output = subprocess.run(['iperf3', '-c', 'server_ip', '--json'], capture_output=True)
+        # run the iperf_server.sh script
+        iperf_output = subprocess.run(['./iperf_server.sh'], capture_output=True)
         return iperf_output.stdout.decode("utf-8")
     except Exception as e:
         print(f"Error running iperf3 test: {e}")

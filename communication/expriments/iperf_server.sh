@@ -15,5 +15,3 @@ echo "iperf_client.txt file sent to the server"
 
 # iperf3 -c 172.27.0.0 -p 54321 -t 30 -J --bidir --timestamps > test.txt
 
-# BAT HOSTS
-sudo nano /etc/bat/hosts
