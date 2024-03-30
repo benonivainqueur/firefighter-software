@@ -1,6 +1,7 @@
 # start interface
 # takes in a string, either olsr or batman
 start_interface() {
+    echo "Starting interface.... recieving $1 as argument."
     if [ "$1" == "olsr" ]; then
         cd ~/firefighter-software/scripts
         ./start_olsr.sh

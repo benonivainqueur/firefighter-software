@@ -22,7 +22,7 @@ def handle_client(connection, client_address):
             print(f"Received message from {client_address}: {message}")
             if message == "disconnecting":
                 break
-            if message.contains("[collecting batman]") or message.contains("[collecting olsr]" ):
+            if "[collecting batman]" in message or "[collecting olsr]" in message:
                 # get pi id from the message
                 # we need to start receiving the batman data until we reach the end 
                 recieving = True
