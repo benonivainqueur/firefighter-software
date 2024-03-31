@@ -189,6 +189,11 @@ def send_data_to_server(server_socket, data):
         # Send the data to the server
         #send "[START]" to indicate the start of the data
         server_socket.sendall("[START]".encode())
+        # clean the json data
+        json_data = json_data.replace("\\n", "")
+        json_data = json_data.replace("\\t", "")
+        json_data = json_data.replace("\\", "")
+
         server_socket.sendall(json_data.encode())
         # send "[END]" to indicate the end of the data
         server_socket.sendall("[END]".encode())
