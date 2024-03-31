@@ -181,8 +181,10 @@ def run_iperf_test():
 # Function to send data to server
 def send_data_to_server(server_socket, data):
     try:
-        # Convert data to JSON string
-        json_data = json.dumps(data)
+        # Convert data to JSON string with no spaces or newlines
+        json_data = json.dumps(data, indent=None)
+        # remove all spaces and newlines from the json_data
+        # print("Data to send:", json_data)
 
         # Send the data to the server
         #send "[START]" to indicate the start of the data

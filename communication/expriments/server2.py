@@ -15,16 +15,22 @@ command = ''
 def clean_fping_data(data):
     pass
 
-def clean_iperf_data(data):
+def clean_iperf_data(json_string):
     # ping_index = data.find("PING")
-        
+    # json_string = data[:-1]
+    # json_string = data.strip
+    # print("DATA:",data)
     # json_string = data[:ping_index]
     # ping = data[ping_index:]
     json_string = json_string.replace("\\n", "")
     json_string = json_string.replace("\\t", "")
     json_string = json_string.replace("\\", "")
-    json_string = json_string[1:]
-    # print("CLEANED JSON:", json_string)
+    json_string = json_string[1:]# remove the first character
+    # remove the last character
+    json_string = json_string[:-1]
+    # json_string = data[:-1]
+
+    print("CLEANED JSON:", json_string)
     
     json_data = json.loads(json_string)
     client_id = json_data["start"]["connected"][0]["local_host"][-1]
@@ -43,15 +49,18 @@ def clean_iperf_data(data):
 def clean_json(data):
     # remove [START] and [END] from data
     # fping = data.find("PING")
-    is_fping = False
+    # is_fping = False
     # if ping index is not found, return
-    if "64 bytes" in data:
-        is_fping = True
-    print("within clean_json..., current command is:", command)
+    is_fping = "64 bytes" in data
+    # print("within clean_json..., current command is:", command)
     if is_fping:
+        print("is fping")
         clean_fping_data(data)
-    is_iperf = "remote_port" in command
+
+    is_iperf = "remote_port" in data
+    # print("is iperf:", is_iperf)
     if is_iperf:
+        # print("is iperf")
         clean_iperf_data(data)
 
    
