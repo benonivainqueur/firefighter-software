@@ -4,6 +4,7 @@ import threading
 import json
 import os
 from time import sleep
+import re
 
 # Global dictionary to store client connections and their addresses
 client_connections = {}
@@ -13,21 +14,73 @@ lock = threading.Lock()  # Define a lock object
 command = ''
 
 def clean_fping_data(data):
-    pass
+    result = {}
+    ip_pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) : \[(\d+)\], 64 bytes, (\d+\.\d+) ms \((\d+\.\d+) avg, (\d+)% loss\)')
+    summary_pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) : xmt/rcv/%loss = (\d+)/(\d+)/(\d+)%?, min/avg/max = (\d+\.\d+)/(\d+\.\d+)/(\d+\.\d+)')
+
+    for match in ip_pattern.finditer(data):
+        ip = match.group(1)
+        index = int(match.group(2))
+        latency = float(match.group(3))
+        avg_latency = float(match.group(4))
+        loss_percentage = int(match.group(5))
+        if ip not in result:
+            result[ip] = []
+        result[ip].append({
+            "index": index,
+            "latency": latency,
+            "avg_latency": avg_latency,
+            "loss_percentage": loss_percentage
+        })
+
+    for match in summary_pattern.finditer(data):
+        ip = match.group(1)
+        transmitted = int(match.group(2))
+        received = int(match.group(3))
+        loss = int(match.group(4))
+        min_latency = float(match.group(5))
+        avg_latency = float(match.group(6))
+        max_latency = float(match.group(7))
+        result[ip].append({
+            "transmitted": transmitted,
+            "received": received,
+            "loss": loss,
+            "min_latency": min_latency,
+            "avg_latency": avg_latency,
+            "max_latency": max_latency
+        })
+
+        # iterate through the minimum latencies, and whichever is the minimum latency, that is the ip address
+
+        for ip, data in result.items():
+            min_latency = 1000000
+            for d in data:
+                if d["min_latency"] < min_latency:
+                    min_latency = d["min_latency"]
+                    result[ip] = d
+
+        client_id = result["destination_ip"][-1]
+        num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json')])
+    with open("./data/pi" + client_id + "/ping" + str(num_files) + ".json", "w") as f:
+        f.write(json.dumps(result, indent=4))
+        
+
+    return json.dumps(result, indent=4)
 
 def clean_iperf_data(json_string):
     # ping_index = data.find("PING")
-    # json_string = data[:-1]
+    json_string = json_string[:-1]
     # json_string = data.strip
     # print("DATA:",data)
     # json_string = data[:ping_index]
     # ping = data[ping_index:]
-    json_string = json_string.replace("\\n", "")
     json_string = json_string.replace("\\t", "")
+    json_string = json_string.replace("\\n", "")
     json_string = json_string.replace("\\", "")
     json_string = json_string[1:]# remove the first character
+    
     # remove the last character
-    json_string = json_string[:-1]
+    # json_string = json_string[:-1]
     # json_string = data[:-1]
 
     print("CLEANED JSON:", json_string)
@@ -42,7 +95,7 @@ def clean_iperf_data(json_string):
         json.dump(json_data, f, indent=4)
     # with open("./data/pi" + client_id + "/ping" + str(num_files) + ".txt", "w") as f:
     #     f.write(ping)
-    print("{client_id} file#{num_files} written to fs")
+    print(f"pi{client_id} file #:{num_files} saved")
 
 
 
@@ -62,8 +115,6 @@ def clean_json(data):
     if is_iperf:
         # print("is iperf")
         clean_iperf_data(data)
-
-   
     return data
 
 def handle_client(connection, client_address):
@@ -86,9 +137,10 @@ def handle_client(connection, client_address):
             if recieving:
                 data += message
             if "[END]" in message:
-                data += message
+                # data += message
                 data = data.replace("[START]", "")
                 data = data.replace("[END]", "")
+                print("uncleaned data:", data)
                 clean_json(data)
                 data = ""
                 recieving = False
