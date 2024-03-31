@@ -1,0 +1,33 @@
+{
+    "source_version" : "debian-2023.0-1",
+    "algorithm" : 4,
+    "vis" : [
+      { "primary" : "b8:27:eb:43:8e:82",
+        "neighbors" : [
+           { "router" : "b8:27:eb:43:8e:82",
+             "neighbor" : "d8:3a:dd:f5:1f:14",
+             "metric" : "1.308" },
+           { "router" : "b8:27:eb:43:8e:82",
+             "neighbor" : "2c:cf:67:26:66:49",
+             "metric" : "1.143" },
+           { "router" : "b8:27:eb:43:8e:82",
+             "neighbor" : "2c:cf:67:26:66:3a",
+             "metric" : "1.378" },
+           { "router" : "b8:27:eb:43:8e:82",
+             "neighbor" : "2c:cf:67:26:66:51",
+             "metric" : "1.067" },
+           { "router" : "b8:27:eb:43:8e:82",
+             "neighbor" : "2c:cf:67:26:66:d0",
+             "metric" : "1.244" }
+        ],
+        "clients" : [
+          "33:33:ff:d2:7f:5f",
+          "33:33:00:00:00:fb",
+          "01:00:5e:00:00:01",
+          "01:00:5e:00:00:fb",
+          "d6:56:90:d2:7f:5f",
+          "33:33:00:00:00:01"
+        ]
+      }
+    ]
+  }

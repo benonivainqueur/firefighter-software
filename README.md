@@ -65,3 +65,19 @@ BATMAN NS3 sim:https://www.youtube.com/watch?v=wZMTW7vw05Q&ab_channel=NS3simulat
 # BAT HOSTS
 sudo nano /etc/bat/hosts
 - Benoni Vainqueur 
+
+# batman
+1. on startup, automatically connect to access point
+2. pull latest git repo
+3. run the batman-adv network 
+4. run the client to connect to the server. Will continue trying until its connected.
+server side ;;
+5. run the server
+6. from the server, blast messages to the client. switch to olsr, batman-adv, or restart networking, or run iperf
+7. format iperf data send it over json to the server
+8. server receives the data, cleans the data and saves it to a file, 
+6.  
+
+batadv-vis
+sudo alfred -i bat0
+sudo batadv-vis -f jsondoc

@@ -211,6 +211,7 @@ def main():
 
             while True:
                 # Receive command from server
+                print("Waiting for command...")
                 command = client_socket.recv(4096).decode("utf-8")
                 if command:
                     print("Command received:", command)
