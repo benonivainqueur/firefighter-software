@@ -37,7 +37,7 @@ def execute_command(command):
             # output = subprocess.run(['./run_iperf.sh'], capture_output=True)
 
         # subprocess.run(command, shell=True)
-        print("output:", output)
+        # print("output:", output)
         return output
 
     except Exception as e:
@@ -192,7 +192,8 @@ def send_data_to_server(server_socket, data):
         server_socket.sendall(json_data.encode())
         # send "[END]" to indicate the end of the data
         server_socket.sendall("[END]".encode())
-        print("Data sent to server successfully.")
+        # print("Data sent to server successfully.")
+        print("Data sent to server:", json_data)
 
     except Exception as e:
         print(f"Error sending data to server: {e}")
