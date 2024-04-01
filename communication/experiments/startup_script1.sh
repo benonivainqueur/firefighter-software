@@ -1,8 +1,8 @@
 #!/bin/bash
 # this script is going to run at startup time. it will wait for the network to be up and running
 # then it will pull the latest code from the git repository. Then it will run another script called start up 2
-cd ~/firefighter-software/scripts
-./restart_networking.sh
+# cd ~/firefighter-software/scripts
+# ./restart_networking.sh
 cd ~/firefighter-software/communication/experiments
 
 # Function to check Wi-Fi connection status, and keep checking until it is successful
