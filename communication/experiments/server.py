@@ -15,7 +15,7 @@ command = ''
 
 
 def clean_fping_data(data):
-    print("within clean_fping data:", data)
+    print("within clean_fping data")
     client_id = data.split("\n")[0]
     # remove the , at the beginning of the client_id
     # remove everything that isnt a digit
@@ -55,7 +55,7 @@ def clean_fping_data(data):
         print(populated_arr)
         # add the populated array to the dictionary
         dict_data[populated_arr[0]] = populated_arr[1:]
-    print("DICTIONARY:", dict_data)
+    # print("DICTIONARY:", dict_data)
 
 
     result = {
@@ -122,6 +122,7 @@ def clean_json(data):
     else:
         print("none of the json types detected in clean_json")
 
+
     return data
 
 def handle_client(connection, client_address):
@@ -139,16 +140,16 @@ def handle_client(connection, client_address):
                 break
             if "[START]" in message:
                 recieving = True
-                print("Recieving data from client")
+                # print("Recieving data from client")
                 data += message
                 print(data)
             if recieving:
-                print("got more")
+                # print("got more")
                 data += message
-                print(data)
+                # print(data)
             if "[END]" in message:
                 # data += message
-                print("found the end")
+                # print("found the end")
                 data = data.replace("[START]", "")
                 data = data.replace("[END]", "")
                 clean_json(data)
@@ -174,9 +175,19 @@ def input_thread():
 def broadcast_command(command):
     print(f"Broadcasting {command} to {[x[1] for x in client_connections.items()]} ")
     for connection, client_address in client_connections.items():
-        print(f"Client address: {client_address}")
+        # if the command has #iperf, only broadcast to the specific number following after #iperf
         try:
-            connection.sendall(f"{command}\n".encode())
+            if "iperf" in command:
+                # desired_target = command.split("iperf")[1]
+                desired_target  = command.replace("iperf", "")
+                print("desired_target_id:", desired_target , "client add", client_address[0][-1])
+                if desired_target.strip() in client_address[0][-1].strip():
+                    print("correct address")
+                    connection.sendall(f"iperf\n".encode())
+                    continue
+            else:
+                print(f"Client address: {client_address}")
+                connection.sendall(f"{command}\n".encode())
         except Exception as e:
             print(f"Error sending command to {client_address}: {e}")
 
