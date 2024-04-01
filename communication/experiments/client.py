@@ -67,7 +67,8 @@ def synchronize_clocks():
 # Function to send data to server
 def send_data_to_server(server_socket, data, command):
     try:
-        if command == "iperf":
+        print("in send_data_to_server, the command recieved was:", command)
+        if "iperf" in command:
             # Convert data to JSON string with no spaces or newlines
             json_data = json.dumps(data, indent=None)
             # remove all spaces and newlines from the json_data
@@ -86,7 +87,7 @@ def send_data_to_server(server_socket, data, command):
             server_socket.sendall("[END]".encode())
             # print("Data sent to server successfully.")
             print("Data sent to server:", json_data)
-        if command == "ping":
+        if "ping" in command :
             # Convert data to JSON string with no spaces or newlines
             json_data = json.dumps(data, indent=None)
             # remove all spaces and newlines from the json_data
