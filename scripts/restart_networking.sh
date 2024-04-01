@@ -5,3 +5,4 @@ sudo systemctl restart NetworkManager
 sudo modprobe -r batman-adv
 # kill olsrd
 sudo killall olsrd
+git pull
