@@ -66,8 +66,9 @@ def clean_fping_data(data):
     
     num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json')])
     with open("./data/pi" + client_id + "/ping" + str(num_files) + ".json", "w") as f:
+        print("WRITING TO FILE #:", "./data/pi" + client_id + "/ping" + str(num_files) + ".json")
         f.write(json.dumps(result, indent=4))
-        
+
     return json.dumps(result, indent=4)
 
 def clean_iperf_data(json_string):
@@ -108,7 +109,6 @@ def clean_json(data):
     # is_fping = False
     # if ping index is not found, return
     is_fping = "64 bytes" in data
-    # print("within clean_json..., current command is:", command)
     if is_fping:
         clean_fping_data(data)
 
@@ -130,7 +130,6 @@ def handle_client(connection, client_address):
         recieving = False
         while True:
             message = connection.recv(1024).decode()
-            print("MESSAGE:", message)
             if not message:
                 break
             if "[START]" in message:
@@ -143,7 +142,6 @@ def handle_client(connection, client_address):
                 # data += message
                 data = data.replace("[START]", "")
                 data = data.replace("[END]", "")
-                print("uncleaned data:", data)
                 clean_json(data)
                 data = ""
                 recieving = False
