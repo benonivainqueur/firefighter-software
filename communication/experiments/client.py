@@ -37,6 +37,7 @@ def execute_command(command):
             print("OUTPUT OF FPING:", output)
         if "close" in command:
             # end the python script
+            print("exiting program")
             exit()
         else :
         # output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
