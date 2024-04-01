@@ -30,3 +30,6 @@ git pull
 # $INTERFACE
 cd ~/firefighter-software/scripts
 ./batman.sh
+
+cd ~/firefighter-software/networking/experiments
+python3 client.py
