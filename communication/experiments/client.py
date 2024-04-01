@@ -33,9 +33,9 @@ def execute_command(command):
         output = ''
         if "ping" in command:
             output = subprocess.run(['bash', 'interface.sh',command ], capture_output=True)
-            output = output.stderr.decode("utf-8")
-            print("OUTPUT OF FPING:", output)
-        if "close" in command:
+            output = output.stdout.decode("utf-8") + output.stderr.decode("utf-8")
+            # output = output.stderr.decode("utf-8")
+        elif "close" in command:
             # end the python script
             print("exiting program")
             exit()
@@ -102,15 +102,14 @@ def send_data_to_server(server_socket, data, command):
             # send "[END]" to indicate the end of the data
             server_socket.sendall("[END]".encode())
             # print("Data sent to server successfully.")
-            print("Data sent to server:", json_data)
+            print("iperf sent to server:", json_data)
         if "ping" in command :
             server_socket.sendall("[START]".encode())
-    
             server_socket.sendall(data.encode())
             # send "[END]" to indicate the end of the data
             server_socket.sendall("[END]".encode())
             # print("Data sent to server successfully.")
-            print("Data sent to server:", data)
+            print("ping data sent to server:", data)
 
     except Exception as e:
         print(f"Error sending data to server: {e}")

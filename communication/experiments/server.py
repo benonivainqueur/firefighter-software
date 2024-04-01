@@ -15,6 +15,7 @@ command = ''
 
 
 def clean_fping_data(data):
+    print("within clean_fping data:", data)
     client_id = data.split("\n")[0]
     # remove the , at the beginning of the client_id
     # remove everything that isnt a digit
@@ -29,7 +30,7 @@ def clean_fping_data(data):
         if len(data[i]) > 0:
             ips.add(data[i].split()[0])
 
-    print("DATA: ", data)
+    # print("DATA: ", data)
     # remove empty strings
     for i in range(len(data)):
         if len(data[i]) == 0:
@@ -62,9 +63,9 @@ def clean_fping_data(data):
         "ips": list(ips),
         "data": dict_data
     }
-
-    
-    num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json')])
+    # /home/pi1/firefighter-software/communication/experiments/data/pi1
+    client_id = client_id.strip()
+    num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json') and "ping" in f])
     with open("./data/pi" + client_id + "/ping" + str(num_files) + ".json", "w") as f:
         print("WRITING TO FILE #:", "./data/pi" + client_id + "/ping" + str(num_files) + ".json")
         f.write(json.dumps(result, indent=4))
@@ -93,9 +94,9 @@ def clean_iperf_data(json_string):
     client_id = json_data["start"]["connected"][0]["local_host"][-1]
     print("client_id:", client_id)
 
-    num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json')])
+    num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json') and "iperf" in f])
 
-    with open("./data/pi" + client_id + "/data" + str(num_files) + ".json", "w") as f:
+    with open("./data/pi" + client_id + "/iperf" + str(num_files) + ".json", "w") as f:
         json.dump(json_data, f, indent=4)
     # with open("./data/pi" + client_id + "/ping" + str(num_files) + ".txt", "w") as f:
     #     f.write(ping)
@@ -108,15 +109,19 @@ def clean_json(data):
     # fping = data.find("PING")
     # is_fping = False
     # if ping index is not found, return
-    is_fping = "64 bytes" in data
-    if is_fping:
-        clean_fping_data(data)
-
+    is_fping = "xmt" in data
     is_iperf = "remote_port" in data
+    if is_fping:
+        print("cleaning fping data")
+        data = clean_fping_data(data)
     # print("is iperf:", is_iperf)
-    if is_iperf:
+    elif is_iperf:
+        print("cleaning iperf data")
         # print("is iperf")
-        clean_iperf_data(data)
+        data = clean_iperf_data(data)
+    else:
+        print("none of the json types detected in clean_json")
+
     return data
 
 def handle_client(connection, client_address):
@@ -136,10 +141,14 @@ def handle_client(connection, client_address):
                 recieving = True
                 print("Recieving data from client")
                 data += message
+                print(data)
             if recieving:
+                print("got more")
                 data += message
+                print(data)
             if "[END]" in message:
                 # data += message
+                print("found the end")
                 data = data.replace("[START]", "")
                 data = data.replace("[END]", "")
                 clean_json(data)

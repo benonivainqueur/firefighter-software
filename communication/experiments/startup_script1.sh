@@ -48,7 +48,9 @@ git pull
 # cd ~/firefighter-software/communication/experiments
 # $INTERFACE
 cd ~/firefighter-software/scripts
+# run iwconfig, if bat0 is not found, then run batman.sh
+
 ./batman.sh
 
-cd ~/firefighter-software/communication/experiments && python3 client.py
+cd ~/firefighter-software/communication/experiments #&& python3 client.py
 
