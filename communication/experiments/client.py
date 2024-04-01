@@ -105,7 +105,7 @@ def send_data_to_server(server_socket, data, command):
             # send "[END]" to indicate the end of the data
             server_socket.sendall("[END]".encode())
             # print("Data sent to server successfully.")
-            print("Data sent to server:", json_data)
+            print("Data sent to server:", data)
 
     except Exception as e:
         print(f"Error sending data to server: {e}")
@@ -126,7 +126,7 @@ def main():
 
             while True:
                 # Receive command from server
-                print("Waiting for command...")
+                
                 command = client_socket.recv(4096).decode("utf-8")
                 if command:
                     print("Command received:", command)

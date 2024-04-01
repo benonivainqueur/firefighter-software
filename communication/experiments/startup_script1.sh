@@ -21,10 +21,21 @@ check_wifi_connection() {
 }
 
 # Wait for Wi-Fi connection
+# use a counter to try 5 times 
+# if the connection is not successful, then exit the script
+counter=0
 while ! check_wifi_connection; do
     echo "Waiting for Wi-Fi connection..."
     sleep 1 # Adjust the sleep duration as needed
+    counter=$((counter+1))
+    if [ $counter -eq 5 ]; then
+        echo "Connection failed. Exiting."
+        # break out of the loop, but still continue with the script
+        break
+        
+    fi
 done
+
 
 # Wi-Fi connection detected, proceed with further commands
 
@@ -39,5 +50,5 @@ git pull
 cd ~/firefighter-software/scripts
 ./batman.sh
 
-cd ~/firefighter-software/networking/experiments
-python3 client.py
+cd ~/firefighter-software/communication/experiments && python3 client.py
+

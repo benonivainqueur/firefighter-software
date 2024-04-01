@@ -13,58 +13,61 @@ connected = False
 lock = threading.Lock()  # Define a lock object
 command = ''
 
+
 def clean_fping_data(data):
-    result = {}
-    ip_pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) : \[(\d+)\], 64 bytes, (\d+\.\d+) ms \((\d+\.\d+) avg, (\d+)% loss\)')
-    summary_pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) : xmt/rcv/%loss = (\d+)/(\d+)/(\d+)%?, min/avg/max = (\d+\.\d+)/(\d+\.\d+)/(\d+\.\d+)')
+    client_id = data.split("\n")[0]
+    # remove the , at the beginning of the client_id
+    # remove everything that isnt a digit
+    client_id = re.sub(r'\D', '', client_id)
+    client_id = client_id[-1]
+    print("client_id:", client_id)
 
-    for match in ip_pattern.finditer(data):
-        ip = match.group(1)
-        index = int(match.group(2))
-        latency = float(match.group(3))
-        avg_latency = float(match.group(4))
-        loss_percentage = int(match.group(5))
-        if ip not in result:
-            result[ip] = []
-        result[ip].append({
-            "index": index,
-            "latency": latency,
-            "avg_latency": avg_latency,
-            "loss_percentage": loss_percentage
-        })
+    data = data.split("\n")[2:]
+    # get unique ip addresses 
+    ips = set()
+    for i in range(len(data)):
+        if len(data[i]) > 0:
+            ips.add(data[i].split()[0])
 
-    for match in summary_pattern.finditer(data):
-        ip = match.group(1)
-        transmitted = int(match.group(2))
-        received = int(match.group(3))
-        loss = int(match.group(4))
-        min_latency = float(match.group(5))
-        avg_latency = float(match.group(6))
-        max_latency = float(match.group(7))
-        result[ip].append({
-            "transmitted": transmitted,
-            "received": received,
-            "loss": loss,
-            "min_latency": min_latency,
-            "avg_latency": avg_latency,
-            "max_latency": max_latency
-        })
+    print("DATA: ", data)
+    # remove empty strings
+    for i in range(len(data)):
+        if len(data[i]) == 0:
+            data.pop(i)
+    dict_data = {}
+    for d in data: 
+        ip,xmt,rcv,loss,min,avg,max =None, None, None, None, None, None, None
+        # fill array with -1 
+        populated_arr = [-1,-1,-1,-1,-1,-1,-1]
+        d = d.strip()
+        # remove all spaces
+        d = d.replace(" ", "")
+        # if " min/avg/max = " in d:
+        d = d.replace ("min/avg/max=", "")
+        d = d.replace("%", "")
+        d=d.replace(":", "")
+        d = d.replace("xmt/rcv/loss=", ",")
+        d = d.replace("/", ",") 
+        d = d.split(",")
+        for i in range(len(d)):
+            populated_arr[i] = d[i]
+        print(populated_arr)
+        # add the populated array to the dictionary
+        dict_data[populated_arr[0]] = populated_arr[1:]
+    print("DICTIONARY:", dict_data)
 
-        # iterate through the minimum latencies, and whichever is the minimum latency, that is the ip address
 
-        for ip, data in result.items():
-            min_latency = 1000000
-            for d in data:
-                if d["min_latency"] < min_latency:
-                    min_latency = d["min_latency"]
-                    result[ip] = d
+    result = {
+        "client_id": client_id,
+        "ips": list(ips),
+        "data": dict_data
+    }
 
-        client_id = result["destination_ip"][-1]
-        num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json')])
+    
+    num_files = len([f for f in os.listdir("./data/pi" + client_id) if f.endswith('.json')])
     with open("./data/pi" + client_id + "/ping" + str(num_files) + ".json", "w") as f:
         f.write(json.dumps(result, indent=4))
         
-
     return json.dumps(result, indent=4)
 
 def clean_iperf_data(json_string):
@@ -107,7 +110,6 @@ def clean_json(data):
     is_fping = "64 bytes" in data
     # print("within clean_json..., current command is:", command)
     if is_fping:
-        print("is fping")
         clean_fping_data(data)
 
     is_iperf = "remote_port" in data
