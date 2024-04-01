@@ -1,11 +1,19 @@
 #!/bin/bash
 # this script is going to run at startup time. it will wait for the network to be up and running
 # then it will pull the latest code from the git repository. Then it will run another script called start up 2
+cd ~firefighter-software/scripts
+./restart_networking.sh
 cd ~/firefighter-software/communication/experiments
 
 # Function to check Wi-Fi connection status, and keep checking until it is successful
 check_wifi_connection() {
     if ping -q -c 1 -W 1 google.com >/dev/null; then
+        return 0 # Connection successful
+    # else if to see if the device is connected to the network
+    elif ifconfig wlan0 | grep -q "inet addr:"; then
+        return 0 # Connection successful
+    # else if connected to bat0
+    elif ifconfig bat0 | grep -q "inet addr:"; then
         return 0 # Connection successful
     else
         return 1 # Connection failed
