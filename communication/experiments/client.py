@@ -89,7 +89,7 @@ def send_data_to_server(server_socket, data, command):
             print("Data sent to server:", json_data)
         if "ping" in command :
             # Convert data to JSON string with no spaces or newlines
-            json_data = json.dumps(data, indent=None)
+            # json_data = json.dumps(data, indent=None)
             # remove all spaces and newlines from the json_data
             # print("Data to send:", json_data)
 
@@ -97,11 +97,11 @@ def send_data_to_server(server_socket, data, command):
             #send "[START]" to indicate the start of the data
             server_socket.sendall("[START]".encode())
             # clean the json data
-            json_data = json_data.replace("\\n", "")
-            json_data = json_data.replace("\\t", "")
-            json_data = json_data.replace("\\", "")
+            # json_data = json_data.replace("\\n", "")
+            # json_data = json_data.replace("\\t", "")
+            # json_data = json_data.replace("\\", "")
 
-            server_socket.sendall(json_data.encode())
+            server_socket.sendall(data.encode())
             # send "[END]" to indicate the end of the data
             server_socket.sendall("[END]".encode())
             # print("Data sent to server successfully.")
