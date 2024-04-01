@@ -130,6 +130,7 @@ def handle_client(connection, client_address):
         recieving = False
         while True:
             message = connection.recv(1024).decode()
+            print("MESSAGE:", message)
             if not message:
                 break
             if "[START]" in message:

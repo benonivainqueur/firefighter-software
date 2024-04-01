@@ -26,11 +26,23 @@ def execute_command(command):
         # remove \n from the command
         command = command.strip()
         print("executing command:", command, "on pi#", pi_id)
-        output =  ''
         # if command == "batman":
-        output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
+        # output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
+        # capture all of the future outputs as well
+        # wait for the process to finish
+        output = ''
+        if "ping" in command:
+            output = subprocess.run(['bash', 'interface.sh',command ], capture_output=True)
+            output = output.stderr.decode("utf-8")
+            print("OUTPUT OF FPING:", output)
+
+        else :
+        # output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
+            output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
+            output = output.stdout.decode("utf-8")
+
         # get raw string from output
-        output = output.stdout.decode("utf-8")
+        print("OUTPUT:", output)
         # elif command == "olsr":
             # output = subprocess.run(['./start_olsr.sh'], capture_output=True)
         # elif command == "iperf":
@@ -88,19 +100,8 @@ def send_data_to_server(server_socket, data, command):
             # print("Data sent to server successfully.")
             print("Data sent to server:", json_data)
         if "ping" in command :
-            # Convert data to JSON string with no spaces or newlines
-            # json_data = json.dumps(data, indent=None)
-            # remove all spaces and newlines from the json_data
-            # print("Data to send:", json_data)
-
-            # Send the data to the server
-            #send "[START]" to indicate the start of the data
             server_socket.sendall("[START]".encode())
-            # clean the json data
-            # json_data = json_data.replace("\\n", "")
-            # json_data = json_data.replace("\\t", "")
-            # json_data = json_data.replace("\\", "")
-
+    
             server_socket.sendall(data.encode())
             # send "[END]" to indicate the end of the data
             server_socket.sendall("[END]".encode())
