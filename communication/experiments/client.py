@@ -35,11 +35,14 @@ def execute_command(command):
             output = subprocess.run(['bash', 'interface.sh',command ], capture_output=True)
             output = output.stderr.decode("utf-8")
             print("OUTPUT OF FPING:", output)
-
+        if "close" in command:
+            # end the python script
+            exit()
         else :
         # output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
             output = subprocess.run(['bash', 'interface.sh', command ], capture_output=True)
             output = output.stdout.decode("utf-8")
+        
 
         # get raw string from output
         print("OUTPUT:", output)
