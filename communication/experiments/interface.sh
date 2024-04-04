@@ -19,7 +19,7 @@ start_interface() {
         ./run_iperf.sh
     elif [ "$1" == "ping" ]; then
         # cd ~/firefighter-software/scripts
-        if ifcong | grep -q "bat0"; then
+        if ifconfig | grep -q "bat0"; then
             ./fping.sh 10 bat0
         else
             ./fping.sh 10 wlan0
