@@ -17,7 +17,12 @@ start_interface() {
         ./run_iperf.sh
     elif [ "$1" == "ping" ]; then
         # cd ~/firefighter-software/scripts
-        ./fping.sh 10 bat0
+        if ifcong | grep -q "bat0"; then
+            ./fping.sh 10 bat0
+        else
+            ./fping.sh 10 wlan0
+        fi
+        # check if the bat0 interface exists, if it does use bat0, else use wlan0
     else
         echo "Invalid interface type. Please enter either 'olsr' or 'batman'."
     fi
