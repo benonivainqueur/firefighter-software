@@ -173,6 +173,11 @@ def input_thread():
                 broadcast_command(command)
 
 def broadcast_command(command):
+    for connection in client_connections.keys():
+                if not connection.fileno() != -1:
+                    print("Client disconnected")
+                    client_connections.pop(connection)
+                    connection.close()
     print(f"Broadcasting {command} to {[x[1] for x in client_connections.items()]} ")
     for connection, client_address in client_connections.items():
         # if the command has #iperf, only broadcast to the specific number following after #iperf
@@ -210,6 +215,8 @@ def server():
             connection, client_address = server_socket.accept()
             client_thread = threading.Thread(target=handle_client, args=(connection, client_address))
             client_thread.start()
+            # check if any client has disconnected
+           
 
     except Exception as e:
         print(f"Error in server: {e}")

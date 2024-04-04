@@ -81,3 +81,23 @@ server side ;;
 batadv-vis
 sudo alfred -i bat0
 sudo batadv-vis -f jsondoc
+
+things to include in the paper
+how im sshing into the clients
+how i automated the ssh scripts
+sshing into batman
+sshing into olsr
+running olsr server
+olsr server parameters
+batman server parameters
+how im running the server
+fping configuration
+fping data cleaning
+batman-adv data cleaning
+how im doing the distributed ocmmunication
+how im sending data around the network
+saving the files 
+distributed messages
+exporting the pi id to the bashrc 
+how im broadcasting to several ports and keep a active list of ports
+mutex and threading 

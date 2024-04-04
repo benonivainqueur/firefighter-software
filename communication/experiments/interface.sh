@@ -6,10 +6,12 @@ start_interface() {
     # echo "Starting interface.... recieving $1 as argument."
     if [ "$1" == "olsr" ]; then
         cd ~/firefighter-software/scripts
-        ./start_olsr.sh
+        sudo ./restart_networking.sh
+        sudo ./start_olsr.sh
     elif [ "$1" == "batman" ]; then
         cd ~/firefighter-software/scripts
-        ./start_batman.sh
+        sudo ./restart_networking.sh
+        sudo ./start_batman.sh
     elif [ "$1" == "iperf" ]; then
         # cd ~/firefighter-software/scripts
         ./run_iperf.sh
