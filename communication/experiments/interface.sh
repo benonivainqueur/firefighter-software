@@ -7,11 +7,13 @@ start_interface() {
     if [ "$1" == "olsr" ]; then
         cd ~/firefighter-software/scripts
         sudo ./restart_networking.sh
-        sudo ./start_olsr.sh
+        # sudo ./start_olsr.sh
+        sudo nohup ./start_olsr.sh &
     elif [ "$1" == "batman" ]; then
         cd ~/firefighter-software/scripts
         sudo ./restart_networking.sh
-        sudo ./start_batman.sh
+        # sudo ./start_batman.sh
+        sudo nohup ./start_batman.sh &
     elif [ "$1" == "iperf" ]; then
         # cd ~/firefighter-software/scripts
         ./run_iperf.sh
