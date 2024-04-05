@@ -17,3 +17,6 @@ tapstrap/training_data/new_gestures/
 
 tapstrap/__pycache__/tapstrap_interpolated.cpython-311.pyc
 tapstrap/__pycache__/tools.cpython-311.pyc
+
+communication/experiments/finalized_data/
+communication/experiments/data

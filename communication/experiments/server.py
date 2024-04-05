@@ -23,7 +23,7 @@ def clean_fping_data(data):
     client_id = client_id[-1]
     print("client_id:", client_id)
 
-    data = data.split("\n")[2:]
+    data = data.split("\n")[1:]
     # get unique ip addresses 
     ips = set()
     for i in range(len(data)):

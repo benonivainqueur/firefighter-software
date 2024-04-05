@@ -15,10 +15,10 @@ start_interface() {
         # sudo ./start_batman.sh
         sudo nohup ./start_batman.sh &
     elif [ "$1" == "iperf" ]; then
-        # cd ~/firefighter-software/scripts
+        cd ~/firefighter-software/communication/experiments
         ./run_iperf.sh
     elif [ "$1" == "ping" ]; then
-        # cd ~/firefighter-software/scripts
+        cd ~/firefighter-software/communication/experiments
         if ifconfig | grep -q "bat0"; then
             ./fping.sh 10 bat0
         else

@@ -118,6 +118,7 @@ def read_gy273_data():
 while True:
     # Read data from sensors
     accel_data = read_mpu6050_accel_data()
+    # derive the current direction we are walking in 
     gyro_data = read_mpu6050_gyro_data()
     magneto_data = read_gy273_data()
     
