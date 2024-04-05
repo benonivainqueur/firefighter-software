@@ -209,6 +209,7 @@ def server():
     # make a thread to run a iperf process
     iperf_thread = threading.Thread(target= lambda: subprocess.run(["bash", "run_iperf.sh"]))
     iperf_thread.start()
+    print("iperf thread started")
 
     try:
         input_thread_handle = threading.Thread(target=input_thread)
