@@ -206,6 +206,10 @@ def server():
 
     print("Server is listening for incoming connections...")
 
+    # make a thread to run a iperf process
+    iperf_thread = threading.Thread(target= lambda: subprocess.run(["bash", "run_iperf.sh"]))
+    iperf_thread.start()
+
     try:
         input_thread_handle = threading.Thread(target=input_thread)
         input_thread_handle.start()
