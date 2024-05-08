@@ -10,6 +10,17 @@ from tkinter import filedialog
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import __init__
+gesture_map = {
+    0: "THUMB TO INDEX",
+    1: "FINGER TO PINKY",
+    2: "FINGER TO INDEX",  
+    3: "DOUBLE TAP",
+    4: "REPEAT",
+    5: "THUMB TO RING",
+    6: "THUMBS DOWN",
+    7: "REGROUP",
+    8: "THUMBS UP",
+}
 
 demo_firefighter_data = [
     {
@@ -64,7 +75,9 @@ class DashboardApp:
 
         ## SERVER ## 
         # self.server_ip = "127.0.0.1"
-        self.server_ip = "192.168.0.30"
+        # self.server_ip = "192.168.0.30"
+        self.server_ip = "192.168.8.243"
+        #
         self.client_count = 0
 
         self.server_port = 5555
@@ -151,32 +164,32 @@ class DashboardApp:
         self.create_record_gestures_widgets(self.tab_record_gestures_right)
 
         # Create the main notebook with tabs
-        self.bottom_right_notebook = ttk.Notebook(self.right_frame)
-        self.bottom_right_notebook.pack(expand=True, fill=tk.BOTH)
+        # self.bottom_right_notebook = ttk.Notebook(self.right_frame)
+        # self.bottom_right_notebook.pack(expand=True, fill=tk.BOTH)
 
         # Create tabs
-        self.bottom_right_notebook_tab_1 = ttk.Frame(self.bottom_right_notebook)
-        self.bottom_right_notebook_tab_2 = ttk.Frame(self.bottom_right_notebook)
-        self.tab_record_gestures = ttk.Frame(self.bottom_right_notebook)
+        # self.bottom_right_notebook_tab_1 = ttk.Frame(self.bottom_right_notebook)
+        # self.bottom_right_notebook_tab_2 = ttk.Frame(self.bottom_right_notebook)
+        # self.tab_record_gestures = ttk.Frame(self.bottom_right_notebook)
 
-        self.bottom_right_notebook.add(self.bottom_right_notebook_tab_1, text="Realtime Inference")
-        self.bottom_right_notebook.add(self.bottom_right_notebook_tab_2, text="bash terminal")
+        # self.bottom_right_notebook.add(self.bottom_right_notebook_tab_1, text="Realtime Inference")
+        # self.bottom_right_notebook.add(self.bottom_right_notebook_tab_2, text="bash terminal")
         
 
         # put a bash terminal in the second tab
-        self.bash_terminal = tk.Text(self.bottom_right_notebook_tab_2)
-        self.bash_terminal.pack()
-        self.bash_terminal.insert(tk.END, "Welcome to the bash terminal\n")
+        # self.bash_terminal = tk.Text(self.bottom_right_notebook_tab_2)
+        # self.bash_terminal.pack()
+        # self.bash_terminal.insert(tk.END, "Welcome to the bash terminal\n")
         # self.notebook.add(self.tab2, text="Realtime Firefighter Data")
         # self.notebook.add(self.tab_record_gestures, text="Record Gestures")
 
         # Make the main notebook resizable
-        self.bottom_right_notebook_tab_1.columnconfigure(0, weight=1)
-        self.bottom_right_notebook_tab_1.columnconfigure(1, weight=1)
-        self.bottom_right_notebook_tab_1.rowconfigure(0, weight=1)
+        # self.bottom_right_notebook_tab_1.columnconfigure(0, weight=1)
+        # self.bottom_right_notebook_tab_1.columnconfigure(1, weight=1)
+        # self.bottom_right_notebook_tab_1.rowconfigure(0, weight=1)
 
-        self.create_record_gestures_widgets(self.tab_record_gestures)
-        self.create_matplotlib_plot(self.bottom_right_notebook_tab_1)
+        # self.create_record_gestures_widgets(self.tab_record_gestures)
+        # self.create_matplotlib_plot(self.bottom_right_notebook_tab_1)
         # self.create_firefighter_data_widgets(self.tab2)
         def correctly_resize(event):
             self.canvas_widget.config(width=event.width, height=event.height)
@@ -355,7 +368,6 @@ class DashboardApp:
         for l in labels:
             view_data[l].set(new_firefighter_data[l.replace("_var", "")])
         # print("labels", labels)
-
         # view_data["last_updated_var"].set(new_firefighter_data["last_updated"])
 
 
@@ -487,6 +499,7 @@ class DashboardApp:
             firefighter["location_label"] = tk.Label(firefighter["frame"], text=firefighter["location"])
             firefighter["location_label"].pack()
             firefighter["gesture_label"] = tk.Label(firefighter["frame"], textvariable=firefighter["gesture"])
+            # use the gesture map to get the gesture label
             firefighter["gesture_label"].pack()
             firefighter["id"] = tk.Label(firefighter["frame"], text=firefighter["id"])
             
@@ -515,7 +528,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = DashboardApp(root)
     # run server in a separate thread
-    app.start_server()
+    # app.start_server()
     server_thread = threading.Thread(target=app.start_server)
     # run the thread in daemon mode so that it automatically stops when the main program exits
     server_thread.daemon = True

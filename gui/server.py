@@ -6,6 +6,17 @@ import sys
 import time
 from datetime import datetime
 
+gesture_map = {
+    0: "THUMB TO INDEX",
+    1: "FINGER TO PINKY",
+    2: "FINGER TO INDEX",  
+    3: "DOUBLE TAP",
+    4: "REPEAT",
+    5: "THUMB TO RING",
+    6: "THUMBS DOWN",
+    7: "REGROUP",
+    8: "THUMBS UP",
+}
 class Server:
     def __init__(self):
         self.host = "192.168.0.30"

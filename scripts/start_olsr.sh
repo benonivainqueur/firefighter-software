@@ -21,4 +21,4 @@ sudo ifconfig wlan0 172.27.0.$PI_ID/16  netmask 255.255.255.0 up
 sleep .5
 #sudo olsrd -i wlan1
 
-sudo olsrd -i wlan0
+sudo olsrd -i wlan0 -r olsr.conf

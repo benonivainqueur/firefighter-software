@@ -1,0 +1,36 @@
+[
+    {
+        "hard_ifindex": 3,
+        "hard_ifname": "wlan0",
+        "orig_address": "pi5",
+        "best": true,
+        "last_seen_msecs": 400,
+        "neigh_address": "pi4",
+        "tq": 140
+    },
+    {
+        "hard_ifindex": 3,
+        "hard_ifname": "wlan0",
+        "orig_address": "pi5",
+        "last_seen_msecs": 400,
+        "neigh_address": "pi5",
+        "tq": 90
+    },
+    {
+        "hard_ifindex": 3,
+        "hard_ifname": "wlan0",
+        "orig_address": "pi4",
+        "last_seen_msecs": 1780,
+        "neigh_address": "pi5",
+        "tq": 62
+    },
+    {
+        "hard_ifindex": 3,
+        "hard_ifname": "wlan0",
+        "orig_address": "pi4",
+        "best": true,
+        "last_seen_msecs": 1780,
+        "neigh_address": "pi4",
+        "tq": 255
+    }
+]

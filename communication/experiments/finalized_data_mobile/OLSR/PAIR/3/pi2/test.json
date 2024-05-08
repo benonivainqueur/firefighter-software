@@ -1,0 +1,98 @@
+[
+    {
+        "tt_address": "b2:6a:3f:39:29:f2",
+        "tt_crc32": 1329276247,
+        "tt_vid": -1,
+        "tt_flags": {
+            "del": false,
+            "roam": false,
+            "wifi": false,
+            "isolated": false,
+            "nopurge": true,
+            "new": false,
+            "pending": false,
+            "temp": false,
+            "raw": 256
+        }
+    },
+    {
+        "tt_address": "33:33:00:00:00:fb",
+        "tt_crc32": 1329276247,
+        "tt_vid": -1,
+        "tt_flags": {
+            "del": false,
+            "roam": false,
+            "wifi": false,
+            "isolated": false,
+            "nopurge": true,
+            "new": false,
+            "pending": false,
+            "temp": false,
+            "raw": 256
+        }
+    },
+    {
+        "tt_address": "01:00:5e:00:00:01",
+        "tt_crc32": 1329276247,
+        "tt_vid": -1,
+        "tt_flags": {
+            "del": false,
+            "roam": false,
+            "wifi": false,
+            "isolated": false,
+            "nopurge": true,
+            "new": false,
+            "pending": false,
+            "temp": false,
+            "raw": 256
+        }
+    },
+    {
+        "tt_address": "01:00:5e:00:00:fb",
+        "tt_crc32": 1329276247,
+        "tt_vid": -1,
+        "tt_flags": {
+            "del": false,
+            "roam": false,
+            "wifi": false,
+            "isolated": false,
+            "nopurge": true,
+            "new": false,
+            "pending": false,
+            "temp": false,
+            "raw": 256
+        }
+    },
+    {
+        "tt_address": "33:33:ff:39:29:f2",
+        "tt_crc32": 1329276247,
+        "tt_vid": -1,
+        "tt_flags": {
+            "del": false,
+            "roam": false,
+            "wifi": false,
+            "isolated": false,
+            "nopurge": true,
+            "new": false,
+            "pending": false,
+            "temp": false,
+            "raw": 256
+        }
+    },
+    {
+        "tt_address": "33:33:00:00:00:01",
+        "tt_crc32": 1329276247,
+        "tt_vid": -1,
+        "tt_flags": {
+            "del": false,
+            "roam": false,
+            "wifi": false,
+            "isolated": false,
+            "nopurge": true,
+            "new": false,
+            "pending": false,
+            "temp": false,
+            "raw": 256
+        }
+    }
+]

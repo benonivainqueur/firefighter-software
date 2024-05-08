@@ -72,9 +72,9 @@ def generate_histogram(predictions):
         histogram[i] = int(histogram[i] / max_count * 20)  # Scale to fit within 20 characters
     
     # Print the histogram
-    print("Prediction Histogram:")
+    debug_print("Prediction Histogram:")
     for i in histogram:
-        print(f"Prediction {i}: {'*' * histogram[i]}")
+        debug_print(f"Prediction {i}: {'*' * histogram[i]}")
 
 '''
     This function uses the current model that is loaded in, and performs inference on the given dataframe
@@ -95,9 +95,13 @@ def perform_inference(df):
         # take every other sequence
         # df = df[::5]
         # debug_print("df shape", df)
-        print("df shape", df.shape)
+        debug_print("df shape", df.shape)
         try:
-            predictions = loaded_model.predict(df)
+            # predictions = loaded_model.predict(df)
+            if headless:
+                predictions = loaded_model.predict(df,verbose=0)
+            else:
+                predictions = loaded_model.predict(df,verbose=1)
             # predictions = loaded_model.predict(df, batch_size=1, verbose=0, steps=1, callbacks=None, max_queue_size=10, workers=2, use_multiprocessing=True )
             end = time.time()
             inf_time = end - start
@@ -116,7 +120,14 @@ def perform_inference(df):
                 # print({i:round(p[i],3) for i in range(len(p))})
             debug_print(preds)
             debug_print("predictions",  np.argmax(predictions, axis=1))
+            likely_pred = np.bincount(np.argmax(predictions, axis=1)).argmax()
             debug_print("most likely prediction", np.bincount(np.argmax(predictions, axis=1)).argmax())
+            shared_queue.put((likely_pred, time.time()))
+            # print("shared quiere size", shared_queue.qsize())
+            # print("content of shared queue", shared_queue.queue)
+            if shared_queue.qsize() > queue_size:
+                # remove the oldest value, which will be the first value in the queue
+                shared_queue.get()
             # debug_print("raw predictions", predictions)
             # debug_print("pred " ,predictions[0])
             pred = predictions[0]
@@ -153,8 +164,11 @@ def perform_inference(df):
         # use three decimal places
         inf_time = round(inf_time, 3)
         # shared_queue.put((predictions[0],time.time()))
-        if shared_queue.qsize() > queue_size:
-            shared_queue.get()
+        # shared_queue.put((np.bincount(np.argmax(predictions, axis=1)).argmax(), time.time()))
+        # print("shared quiere size", shared_queue.qsize())
+        # print("content of shared queue", shared_queue.queue)
+        # if shared_queue.qsize() > queue_size:
+        #     shared_queue.get()
         debug_print("predictions:", predictions, "inf_time:", inf_time,"s")
         return predictions[0]
 
@@ -205,7 +219,7 @@ def on_raw_data(identifier, packets):
                 inference = perform_inference(feature_df)
                 # use a seperate thread to run inference so that we arent blocking the main thread
                 # thread = threading.Thread(target=perform_inference, args=(feature_df,))
-                shared_queue.put((inference,time.time()))
+                # shared_queue.put((inference,time.time()))
                 end_time = time.time()
                 # debug_print("FE Time", end_time - start_time)
                 # if (int == 1 and client != None):
@@ -259,6 +273,7 @@ client = None # global variable that will hold the client
 def debug_print(*args):
     if headless: 
         pass
+        # print(*args)
     else:
         print(*args)
     
@@ -297,8 +312,8 @@ def main(hl = False,async_loop=None):
     # use list comprehension to map a index to a model name 
     model_tuples = [(models[i], i) for i  in range(len(models))]
     if headless:
-        # debug_print("running headless")
-        model_num = 2
+        print("running headless")
+        model_num = 1
     else: 
         model_num = input("Enter model number. {models}:".format(models=model_tuples))
     model_path = current_dir+'/models/{m}'.format(m = model_tuples[int(model_num)][0])

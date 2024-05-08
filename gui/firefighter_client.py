@@ -65,7 +65,7 @@ class Firefighter:
         self.wifi_network_name = "FirefighterNet"
         # self.ip = socket.gethostbyname(socket.gethostname())
         self.ip = None
-        self.server_ip = "192.168.0.30"
+        self.server_ip = "192.168.8.243"
         self.server_port = 5555
         self.connected = False
         self.id = id
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     counter = 0
     while not f1.connected:
         try:
-            f1.run_client("192.168.0.30","5555")
+            f1.run_client(f1.server_ip,f1.server_port)
         except Exception as e:
             print("attempt {} connecting to server, trying again in 3 seconds".format(counter))
             time.sleep(1)
@@ -311,16 +311,16 @@ if __name__ == "__main__":
             print("Failed to connect to server after 5 attempts, exiting.")
             break
 
-    # counter = 0
-    # while not f1.tapstrap_connected:
-    #     try: 
-    #         f1.run_tapstrap_subprocess()
-    #     except Exception as e:
-    #         print("failed to run tapstrap subprocess attempt {}, trying again in 3 seconds".format(counter))
-    #         time.sleep(1)
-    #     counter += 1
-    #     if counter > 5:
-    #         print("Failed to connect to tapstrap after {} attempts, exiting.".format(counter))
+    counter = 0
+    while not f1.tapstrap_connected:
+        try: 
+            f1.run_tapstrap_subprocess()
+        except Exception as e:
+            print("failed to run tapstrap subprocess attempt {}, trying again in 3 seconds".format(counter))
+            time.sleep(1)
+        counter += 1
+        if counter > 5:
+            print("Failed to connect to tapstrap after {} attempts, exiting.".format(counter))
 
     # s = sched.scheduler()
     
