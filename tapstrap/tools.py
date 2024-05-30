@@ -16,6 +16,7 @@ import seaborn as sns
 import sys
 import __init__
 sys.path.append( sys.path[0] + "/..")
+global tap_client
 
 # from sklearn.metrics import confusion_matrix
 # from sklearn.metrics import accuracy_score, classification_report
@@ -451,16 +452,13 @@ test_packets = [{'type': 'accl', 'ts': 5711184, 'payload': [0, 12, -29, -32, 2, 
                 {'type': 'accl', 'ts': 5711200, 'payload': [0, 11, -29, -32, 2, -7, -32, 2, -2, -32, 0, 5, -32, 1, 4]}]
 
 # interpolate_preexisting_data()
-
-
-async def connect_to_tapstrap(loop,callback,timeout=100):
+async def send_vibration(sequence=[100,100,100]):
     """
-    Connects to the Tap Strap device and sets up the necessary configurations.
+    Sends a vibration sequence to the Tap Strap device.
 
     Parameters:
-    - loop: The event loop to use for asynchronous operations.
-    - callback: The callback function to handle raw data events from the Tap Strap.
-    - timeout: The timeout duration in seconds for keeping the program running.
+    - tap_client: The TapSDK client object.
+    - sequence: The vibration sequence to send to the Tap Strap device.
 
     Returns:
     None
@@ -471,53 +469,195 @@ async def connect_to_tapstrap(loop,callback,timeout=100):
     import logging 
     from bleak import _logger as logger
     import sys
-    if not on_linux():
-        # from tapsdk import TapLinuxSDK
-        print("Connecting to Tap Strap")
-        l = logging.getLogger("asyncio")
-        l.setLevel(logging.DEBUG)
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(logging.INFO)
-        l.addHandler(h)
-        logger.addHandler(h)
+    import asyncio
+    # print("sending vibration sequence!")
 
-        tap_client = TapSDK(loop)
-        devices = await tap_client.list_connected_taps()
-        # print("devices",devices)
-        x = await tap_client.manager.connect_retrieved()
-        x = await tap_client.manager.is_connected()
-        print("Connected: {}".format(x))
-        await tap_client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
-        await tap_client.register_raw_data_events(callback)
-        await tap_client.send_vibration_sequence([100,100,100])
-        await asyncio.sleep(timeout, True) # this line  is to keep the program running for 50 seconds
-    else: 
-        print("On Linux")
+    # # get current loop
+    # if send_vibration.loop == None:
+    #     send_vibration.loop = asyncio.get_event_loop()
+    # # connect to the tap strap
+    # tap_client = TapSDK(send_vibration.loop)
+    # # await tap_client.connect()
+    # await tap_client.send_vibration_sequence(sequence)
+    # await asyncio.sleep(duration/1000, True)
+
+# async def connect_to_tapstrap(loop,callback,timeout=100):
+#     """
+#     Connects to the Tap Strap device and sets up the necessary configurations.
+
+#     Parameters:
+#     - loop: The event loop to use for asynchronous operations.
+#     - callback: The callback function to handle raw data events from the Tap Strap.
+#     - timeout: The timeout duration in seconds for keeping the program running.
+
+#     Returns:
+#     None
+#     """
+#     from tapsdk import TapSDK, TapInputMode
+#     from tapsdk.models import AirGestures
+#     import asyncio
+#     import logging 
+#     from bleak import _logger as logger
+#     import sys
+#     if not on_linux():
+#         # from tapsdk import TapLinuxSDK
+#         print("Connecting to Tap Strap")
+#         l = logging.getLogger("asyncio")
+#         l.setLevel(logging.DEBUG)
+#         h = logging.StreamHandler(sys.stdout)
+#         h.setLevel(logging.INFO)
+#         l.addHandler(h)
+#         logger.addHandler(h)
+
+#         tap_client = TapSDK(loop)
+#         devices = await tap_client.list_connected_taps()
+#         # print("devices",devices)
+#         x = await tap_client.manager.connect_retrieved()
+#         x = await tap_client.manager.is_connected()
+#         print("Connected: {}".format(x))
+#         await tap_client.set_input_mode(TapInputMode("raw", sensitivity=[0,0,0]))
+#         await tap_client.register_raw_data_events(callback)
+#         await tap_client.send_vibration_sequence([100,100,100])
+#         connect_to_tapstrap.tap_client = tap_client
+
+#         await asyncio.sleep(timeout, True) # this line  is to keep the program running for 50 seconds
+#     else: 
+#         print("On Linux")
         
-        loop.set_debug(False)
-        #l = logging.getLogger("asyncio")
-        #l.setLevel(logging.DEBUG)
-        # h = logging.StreamHandler(sys.stdout)
-        # h.setLevel(logging.WARNING)
-        #l.addHandler(h)
-        # logger.addHandler(h)
+#         loop.set_debug(False)
+#         #l = logging.getLogger("asyncio")
+#         #l.setLevel(logging.DEBUG)
+#         # h = logging.StreamHandler(sys.stdout)
+#         # h.setLevel(logging.WARNING)
+#         #l.addHandler(h)
+#         # logger.addHandler(h)
         
-        tap_client = TapSDK(None,loop)
-        if not await tap_client.client.connect_retrieved():
-            print("failed to connect to the device.")
-            logger.error("failed to connect to the device.")
-            return
-        #x = await client.manager.connect_retrieved()
-        #x = await client.manager.is_connected()
-        #logger.info("Connected: {0}".format(x))
-        print("Connected to {}".format(tap_client.client.address))
-        logger.info("Connected to {}".format(tap_client.client.address))
-        await tap_client.set_input_mode(TapInputMode("controller"))
-        await tap_client.register_raw_data_events(callback)
-        await tap_client.set_input_mode(TapInputMode("raw"))
-        await tap_client.send_vibration_sequence([300,100,300])
-        await asyncio.sleep(timeout, True) 
+#         tap_client = TapSDK(None,loop)
+#         if not await tap_client.client.connect_retrieved():
+#             print("failed to connect to the device.")
+#             logger.error("failed to connect to the device.")
+#             return
+#         #x = await client.manager.connect_retrieved()
+#         #x = await client.manager.is_connected()
+#         #logger.info("Connected: {0}".format(x))
+#         print("Connected to {}".format(tap_client.client.address))
+#         logger.info("Connected to {}".format(tap_client.client.address))
+#         await tap_client.set_input_mode(TapInputMode("controller"))
+#         await tap_client.register_raw_data_events(callback)
+#         await tap_client.set_input_mode(TapInputMode("raw"))
+#         await tap_client.send_vibration_sequence([300,100,300])
+#         connect_to_tapstrap.tap_client = tap_client
+#         await asyncio.sleep(timeout, True) 
         
+#     return tap_client
+
+async def connect_to_tapstrap(loop, callback, timeout=100):
+    """
+    Connects to the Tap Strap device and sets up the necessary configurations.
+
+    Parameters:
+    - loop: The event loop to use for asynchronous operations.
+    - callback: The callback function to handle raw data events from the Tap Strap.
+    - timeout: The timeout duration in seconds for keeping the program running.
+
+    Returns:
+    TapSDK: The TapSDK instance representing the connected Tap Strap.
+    """
+    from tapsdk import TapSDK, TapInputMode
+    import asyncio
+
+    tap_client = await _connect_to_tapstrap(loop, callback)
+
+    await asyncio.sleep(timeout, True)  # Keep the program running for the specified timeout
+    return tap_client
+
+
+async def _connect_to_tapstrap(loop, callback):
+    """
+    Internal function to connect to the Tap Strap device.
+
+    Parameters:
+    - loop: The event loop to use for asynchronous operations.
+    - callback: The callback function to handle raw data events from the Tap Strap.
+
+    Returns:
+    TapSDK: The TapSDK instance representing the connected Tap Strap.
+    """
+    from tapsdk import TapSDK, TapInputMode
+
+    tap_client = TapSDK(loop)
+    devices = await tap_client.list_connected_taps()
+    if not devices:
+        print("No Tap Strap devices found.")
+        return None
+
+    await tap_client.manager.connect_retrieved()
+    await tap_client.set_input_mode(TapInputMode("raw", sensitivity=[0, 0, 0]))
+    await tap_client.register_raw_data_events(callback)
+
+    print("Connected to Tap Strap")
+    return tap_client
+
+
+async def vibrate(sequence):
+    """
+    Sends a vibration sequence to the connected Tap Strap.
+
+    Parameters:
+    - sequence: List of vibration durations in milliseconds.
+
+    Returns:
+    None
+    """
+    # if not hasattr(connect_to_tapstrap, 'tap_client') or connect_to_tapstrap.tap_client is None:
+    #     print("Tap Strap is not connected.")
+    #     return
+
+    tap_client = connect_to_tapstrap.tap_client
+    await tap_client.send_vibration_sequence(sequence)
+
+def connect_to_tapstrap_sync(loop, callback, timeout=1000):
+    import asyncio
+    """
+    Synchronous wrapper around connect_to_tapstrap.
+    """
+    return asyncio.run(connect_to_tapstrap(loop, callback, timeout))
+
+def vibrate_sync(sequence):
+    import asyncio
+    """
+    Synchronous wrapper around vibrate.
+    """
+    return asyncio.run(vibrate(sequence))
+
+# async def get_tap_client():
+
+# async def vibrate(sequence=[100,100,100]):
+#     """
+#     Sends a vibration sequence to the Tap Strap device.
+
+#     Parameters:
+#     - tap_client: The TapSDK client object.
+#     - duration: The duration of the vibration sequence in milliseconds.
+
+#     Returns:
+#     None
+#     """
+#     from tapsdk import TapSDK, TapInputMode
+#     from tapsdk.models import AirGestures
+#     import asyncio
+#     import logging 
+#     from bleak import _logger as logger
+#     import sys
+#     import asyncio
+#     # get current loop
+#     loop = asyncio.get_event_loop()
+#     # connect to the tap strap
+#     tap_client = TapSDK(loop)
+#     # await tap_client.connect()
+#     await tap_client.send_vibration_sequence([300,100,300])
+#     # await asyncio.ensure_future(tap_client.send_vibration_sequence(sequence))
+#     # await asyncio.sleep(duration/1000, True)
 
 
 if __name__ == "__main__":

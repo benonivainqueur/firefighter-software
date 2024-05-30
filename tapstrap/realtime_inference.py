@@ -22,9 +22,24 @@ from tapstrap.tools import feature_extraction, rolling_feature_extraction, resha
 from tapstrap.tapstrap_interpolated import merge_packets
 # from  import connect_to_tapstrap
 import queue
+global tap_device
 global shared_queue 
+global vibration_queue
+vibration_queue= queue.Queue()
 queue_size = 10
 shared_queue = queue.LifoQueue() 
+gesture_map = {
+    0: "THUMB TO INDEX",
+    1: "FINGER TO PINKY",
+    2: "FINGER TO INDEX",  
+    3: "DOUBLE TAP",
+    4: "REPEAT",
+    5: "THUMB TO RING",
+    6: "THUMBS DOWN",
+    7: "REGROUP",
+    8: "THUMBS UP",
+    9:"NONE"
+}
 
 # on_linux = False
 # # use os package to determine if we are on a form of linux
@@ -74,7 +89,7 @@ def generate_histogram(predictions):
     # Print the histogram
     debug_print("Prediction Histogram:")
     for i in histogram:
-        debug_print(f"Prediction {i}: {'*' * histogram[i]}")
+        debug_print(f"{gesture_map[i]}: {'*' * histogram[i]}")
 
 '''
     This function uses the current model that is loaded in, and performs inference on the given dataframe
@@ -118,10 +133,10 @@ def perform_inference(df):
             generate_histogram(predictions)
             # make a histogram of bars indicating the distribution of the predictions
                 # print({i:round(p[i],3) for i in range(len(p))})
-            debug_print(preds)
-            debug_print("predictions",  np.argmax(predictions, axis=1))
+            # debug_print(preds)
+            # debug_print("predictions",  np.argmax(predictions, axis=1))
             likely_pred = np.bincount(np.argmax(predictions, axis=1)).argmax()
-            debug_print("most likely prediction", np.bincount(np.argmax(predictions, axis=1)).argmax())
+            debug_print("most likely prediction", gesture_map[np.bincount(np.argmax(predictions, axis=1)).argmax()])
             shared_queue.put((likely_pred, time.time()))
             # print("shared quiere size", shared_queue.qsize())
             # print("content of shared queue", shared_queue.queue)
@@ -206,6 +221,9 @@ def on_raw_data(identifier, packets):
             debug_print("performing inference")
             # fill na values with 0
         # try:
+            # if vibration_queue:
+                # asyncio.run(connect_to_tapstrap.tap_client.send_vibration_sequence(sequence=vibration_queue.get()))
+
             if use_thumb:
                 start_time = time.time()
                 new_df = process_interpolated_data(timestamped_interpolated_values)
@@ -272,8 +290,8 @@ client = None # global variable that will hold the client
 
 def debug_print(*args):
     if headless: 
-        pass
-        # print(*args)
+        # pass
+        print(*args)
     else:
         print(*args)
     
@@ -284,10 +302,11 @@ def main(hl = False,async_loop=None):
     global run_time
     global loaded_model
     global lstm
+    global tap_device
     headless = hl
     lstm = False
     use_thumb = True # decides whether or not to use the thumb in the feature extraction
-    run_time = 200.0
+    run_time = 10000000.0
     # debug_print current directory
     # while True:
     #     # debug_print("hello!")
@@ -332,7 +351,8 @@ def main(hl = False,async_loop=None):
         if async_loop == None: # if loop is not passed in because headless is false
             async_loop = asyncio.get_event_loop()
         # get a new event loop
-        async_loop.run_until_complete(connect_to_tapstrap(async_loop,on_raw_data,run_time))
+        tap_device = connect_to_tapstrap(async_loop,on_raw_data,run_time)
+        async_loop.run_until_complete(tap_device)
         # loop.run_until_complete(run(loop, True))
     except KeyboardInterrupt:
         debug_print("KeyboardInterrupt")

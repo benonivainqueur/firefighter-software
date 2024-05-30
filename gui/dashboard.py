@@ -10,6 +10,8 @@ from tkinter import filedialog
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import __init__
+import datetime
+
 gesture_map = {
     0: "THUMB TO INDEX",
     1: "FINGER TO PINKY",
@@ -20,6 +22,7 @@ gesture_map = {
     6: "THUMBS DOWN",
     7: "REGROUP",
     8: "THUMBS UP",
+    9: "NONE",
 }
 
 demo_firefighter_data = [
@@ -78,6 +81,7 @@ class DashboardApp:
         # self.server_ip = "192.168.0.30"
         self.server_ip = "192.168.8.243"
         #
+        self.client_connections={}
         self.client_count = 0
 
         self.server_port = 5555
@@ -131,13 +135,13 @@ class DashboardApp:
         divider.pack(fill="x")
         # 
         self.top_left_notebook = ttk.Notebook(self.left_frame)
-        self.top_left_notebook.pack(fill="both", expand=True, side="top")
+        self.top_left_notebook.pack(fill="both", expand=False, side="top")
         # Create tabs in the left frame
         self.left_notebook = ttk.Notebook(self.left_frame)
-        self.left_notebook.pack(fill="both", expand=True)
+        self.left_notebook.pack(fill="both", expand=False)
 
-        self.tab_record_gestures_left = ttk.Frame(self.left_notebook)
-        self.left_notebook.add(self.tab_record_gestures_left, text="Record Gestures (Left)")
+        # self.tab_record_gestures_left = ttk.Frame(self.left_notebook)
+        # self.left_notebook.add(self.tab_record_gestures_left, text="Record Gestures (Left)")
         # create a widget that will hold the dashboard data. Things such as the # of clients connected,
         # current ip address, current wifi strength, and the last time the data was updated
         self.server_info = ttk.Frame(self.top_left_notebook)
@@ -146,7 +150,7 @@ class DashboardApp:
         self.create_server_info(self.server_info)
 
         # Create widgets for Record Gestures tab in the left frame
-        self.create_record_gestures_widgets(self.tab_record_gestures_left)
+        # self.create_record_gestures_widgets(self.tab_record_gestures_left)
 
         # Create tabs in the right frame
         self.right_notebook = ttk.Notebook(self.right_frame)
@@ -160,8 +164,42 @@ class DashboardApp:
         self.right_notebook.add(self.tab_create_firefighter_data, text="Realtime Firefighter Data")
         self.create_firefighter_data_widgets(self.tab_create_firefighter_data)
 
+        # # Widget that will allow the user to select n amounts firefighter using a checkbox, and also decide a message type to send
+        # self.select_firefighter = ttk.Frame(self.left_notebook)
+        # self.left_notebook.add(self.select_firefighter, text="Select Firefighter")
+        # # self.render_firefighter_data()
+        
+        self.select_firefighter = ttk.Frame(self.left_notebook)
+        self.left_notebook.add(self.select_firefighter, text="Select Firefighter")
+
+        self.select_all_button = ttk.Button(self.select_firefighter, text="Select All", command=self.select_all)
+        self.select_all_button.pack()
+        # self.firefighters = ["Firefighter 1", "Firefighter 2", "Firefighter 3", "Firefighter 4"]
+        self.firefighters = []
+        self.checkbox_vars = {firefighter: tk.BooleanVar() for firefighter in self.firefighters}
+        self.render_firefighter_selector()
+
+    
+
+        message_types = ["Wellness Check", "Location", "Battery", "Wifi Strength"]
+        self.message_type = ttk.Combobox(self.select_firefighter, values=message_types)
+        self.message_type.pack()
+        self.message_type.set("Gesture")
+
+        self.send_message_button = ttk.Button(self.select_firefighter, text="Send Message", command=self.send_message)
+        self.send_message_button.pack()
+
+        self.message_log = ttk.Treeview(self.select_firefighter, columns=("Timestamp", "Message Type", "Recipients", "Status"), show="headings")
+        self.message_log.heading("Timestamp", text="Timestamp")
+        self.message_log.heading("Message Type", text="Message Type")
+        self.message_log.heading("Recipients", text="Recipients")
+        self.message_log.heading("Status", text="Status")
+        self.message_log.pack(fill='both', expand=True)
+
+
         # Create widgets for Record Gestures tab in the right frame
         self.create_record_gestures_widgets(self.tab_record_gestures_right)
+
 
         # Create the main notebook with tabs
         # self.bottom_right_notebook = ttk.Notebook(self.right_frame)
@@ -173,15 +211,6 @@ class DashboardApp:
         # self.tab_record_gestures = ttk.Frame(self.bottom_right_notebook)
 
         # self.bottom_right_notebook.add(self.bottom_right_notebook_tab_1, text="Realtime Inference")
-        # self.bottom_right_notebook.add(self.bottom_right_notebook_tab_2, text="bash terminal")
-        
-
-        # put a bash terminal in the second tab
-        # self.bash_terminal = tk.Text(self.bottom_right_notebook_tab_2)
-        # self.bash_terminal.pack()
-        # self.bash_terminal.insert(tk.END, "Welcome to the bash terminal\n")
-        # self.notebook.add(self.tab2, text="Realtime Firefighter Data")
-        # self.notebook.add(self.tab_record_gestures, text="Record Gestures")
 
         # Make the main notebook resizable
         # self.bottom_right_notebook_tab_1.columnconfigure(0, weight=1)
@@ -197,7 +226,67 @@ class DashboardApp:
 
             self.bottom_right_notebook_tab_1.bind("<Configure>", correctly_resize)
             self.canvas_widget.pack(expand=True, fill=tk.BOTH)
+
+    # def send_message(self):
+    #         message_type = self.message_type.get()
+    #         print("Sending message of type:", message_type)
+    #         # self.client_socket.sendall(message_type.encode())
+    #         # self.client_socket.sendall("Refresh".encode())
+    #         self.refresh_data()
+    def update_firefighter_list(self):
+        self.checkbox_vars = {firefighter: tk.BooleanVar() for firefighter in self.firefighters}
+        self.render_firefighter_selector()
+
+    def map_id_to_socket(self, id):
+        
+        return self.client_sockets[id]
     
+
+    def send_message(self):
+        selected_firefighters = [firefighter for firefighter, var in self.checkbox_vars.items() if var.get()]
+        selected_message_type = self.message_type.get()
+        if selected_firefighters:
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            recipients = ", ".join(selected_firefighters)
+            status = "Not Replied"
+            self.message_log.insert("", "end", values=(timestamp, selected_message_type, recipients, status))
+            # Clear selection
+            for var in self.checkbox_vars.values():
+                var.set(False)
+            print("Selected firefighters:", selected_firefighters)
+            print("client connections: ", self.client_connections)
+            print ("FIREFIGHTER DATA:" , self.firefighter_data)
+            # Send message to selected firefighters
+            # for selected_firefighter_name in selected_firefighters:
+                # map the firefighter to the socket
+                # get the ip addr of the firefighter
+                # get firefighter with that specific name
+            for firefighter in self.firefighter_data.items():
+                print("this specific firefighter", firefighter)
+                if firefighter[1]["name"] in selected_firefighters:
+                    print("sending message to firefighter", firefighter[1]["name"])
+                    print("ip:", firefighter[1]["ip"])
+                    # self.server.sendall(f"{selected_message_type} to {firefighter}".encode())
+                    for connection, client_address in self.client_connections.items():
+                        if client_address == firefighter[1]["ip"]:
+                            connection.sendall(f"{selected_message_type} to {firefighter}".encode())
+                            print(f"Sent {selected_message_type} to {firefighter}")
+                        # connection.sendall(f"{selected_message_type} to {firefighter}".encode())
+            # ip = self.firefighter_data.get("name")
+            # print ('FINAL IP', ip)
+           
+                # for cc in self.firefighters.server_ip:
+                    # print("CC", cc)
+                    # if True:
+                    #     self.client_connections[ip].sendall(f"{selected_message_type} to {firefighter}".encode())
+                    #     print(f"Sent {selected_message_type} to {firefighter}")
+                # self.client_connections.sendall(f"{selected_message_type} to {firefighter}".encode())
+                # self.client_socket.sendall("Refresh".encode())
+                # self.broadcast_command("test", 3)
+                self.refresh_data()
+        else:
+            print("No firefighters selected.")
+            
     def create_server_info(self, tab_frame):
         # Create and pack labels
         self.ip_label = ttk.Label(tab_frame, text="IP Address: " + self.server_ip)
@@ -215,6 +304,9 @@ class DashboardApp:
         self.refresh_button = ttk.Button(tab_frame, text="Refresh Data", command=self.refresh_data)
         self.refresh_button.pack()
 
+    # def message_awaiter(self):
+        # if we send a message to a firefighter, we will likely want a confirmation with new data, and 
+
     def get_data_with_timestamp(self):
         timestamp = time.time()
         data_with_timestamp = {
@@ -226,27 +318,72 @@ class DashboardApp:
     def start_server(self):
         print("in start server")
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allows to reuse address 
+
         self.server.bind((self.server_ip, self.server_port))
         self.server.listen()
         print(f"Server listening on {self.server_ip}:{self.server_port}")
         while True:
-            client, addr = self.server.accept()
-            print(f"Connected to {addr}")
-            handle_client_thread = threading.Thread(target=self.handle_client, args=(client, addr))
+            connection, client_address = self.server.accept()
+            print(f"Connected to {client_address}")
+            handle_client_thread = threading.Thread(target=self.handle_client, args=(connection, client_address))
             handle_client_thread.daemon = True
             handle_client_thread.start()
 
+    def broadcast_command(self,command, target):
+        print(f"Broadcasting {command} to {[x[1] for x in self.client_connections.items()]} ")
+        for connection, client_address in self.client_connections.items():
+            # if the command has #iperf, only broadcast to the specific number following after #iperf
+            try:
+                    # desired_target = command.split("iperf")[1]
+                    desired_target  = 3
+                    
+                    # find the client ip with the desired target id 
+                    # desired_client = self.client_connections[desired_target]
+                    
+                    print("desired_target_id:", desired_target , "client add", client_address[0][-1])
+                    # if desired_target.strip() in client_address[0][-1].strip():
+                    # if client_address[0][-1] == target:
+                    print("correct address")
+                    connection.sendall(f"TEST".encode())
+                    continue
+                    # else:
+                        # print(f"Client address: {client_address}")
+                        # connection.sendall(f"{command}\n".encode())
+                        # connection.sendall("TEST".encode())
+
+            except Exception as e:
+                print(f"Error sending command to {client_address}: {e}")
+                print("Removing client from list...")
+                connection.close()
+                del self.client_connections[connection]
+
+            
     def handle_client(self, client, addr):
         while True:
             try:
-                
+                    self.client_connections[client] = addr
                     data = client.recv(1024).decode()
                     if data:
-                        print("Received data:", data)
+                        # print("Received data:", data)
                         # self.firefighter_data_handler(data)
                         try: 
                             firefighter = json.loads(data)
+                            # update firefighter set
+                            if firefighter.get("name") not in self.firefighters:
+                                self.firefighters.append(firefighter.get("name"))
+                                self.update_firefighter_list()
+                                # print("Firefighters:", self.firefighters)
+                            # remap the firefighter Gesture data to just only say the gesture name
+                            print(firefighter)
+
+                            gesture_id = int(firefighter["gesture"][0])
+                            # firefighter["last_updated"] = firefighter["gesture"][1]
+                            print(gesture_id)
+                            firefighter["gesture"] = gesture_map.get(gesture_id)
+                            print("GESTURE! ", firefighter["gesture"])
                             self.update_firefighter_widget(firefighter["id"], new_firefighter_data=firefighter)
+                            # self.firefighters.append(firefighter)
                             self.refresh_data()
                         except Exception as e:
                             print("Error in updating firefighter widget", e)
@@ -477,8 +614,17 @@ class DashboardApp:
         self.recording_text.set("Not Recording")
    
 
-        # Start receiving data
-        # self.receive_data()
+    def render_firefighter_selector(self):
+        for firefighter, var in self.checkbox_vars.items():
+            checkbox = ttk.Checkbutton(self.select_firefighter, text=firefighter, variable=var)
+            checkbox.pack()
+
+
+    def select_all(self):
+        # invert 
+        for var in self.checkbox_vars.values():
+            var.set(True)
+
     def render_firefighter_data(self):
         # each firefighter will have a name, location, and gesture
         tk.Label(self.tab2, text="Firefighter Data").pack()
@@ -499,7 +645,6 @@ class DashboardApp:
             firefighter["location_label"] = tk.Label(firefighter["frame"], text=firefighter["location"])
             firefighter["location_label"].pack()
             firefighter["gesture_label"] = tk.Label(firefighter["frame"], textvariable=firefighter["gesture"])
-            # use the gesture map to get the gesture label
             firefighter["gesture_label"].pack()
             firefighter["id"] = tk.Label(firefighter["frame"], text=firefighter["id"])
             
@@ -512,9 +657,10 @@ class DashboardApp:
 
     def refresh_data(self):
         # self.client_socket.sendall("Refresh".encode())
-        # self.root.after(1000, self.refresh_data)
         self.root.update_idletasks()
         self.root.update()
+        # self.root.after(1000, self.refresh_data)
+
     
     # def update_firefighter_data(self, data):
     #     self.firefighter_data = data

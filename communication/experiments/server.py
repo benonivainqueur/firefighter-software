@@ -133,7 +133,7 @@ def handle_client(connection, client_address):
         client_connections[connection] = client_address
         connected = True
         data = ""
-        recieving = False
+        recieving = False   
         while True:
             message = connection.recv(1024).decode()
             if not message:

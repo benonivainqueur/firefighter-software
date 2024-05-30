@@ -23,6 +23,11 @@ sys.path.append( sys.path[0] + "/..")
 import tapstrap.realtime_inference 
 import schedule 
 import time 
+from tapstrap.tools import send_vibration, vibrate_sync, vibrate
+
+# from tapstrap.tools import vibrate
+
+command_queue =[]
 
 
 class Firefighter:
@@ -80,6 +85,7 @@ class Firefighter:
         self.connection_tree = {}
         self.bit_rate = "None"
         self.tapstrap_shared_queue = tapstrap.realtime_inference.shared_queue
+        self.tapstrap_vibration_queue = tapstrap.realtime_inference.vibration_queue
         self.disconnect_time = 0
 
     def update_location(self, new_location=None):
@@ -112,6 +118,28 @@ class Firefighter:
         """
         self.last_updated = time.time()
     
+    def reconnect(self):
+        """
+        Reconnects to the server.
+        """
+
+        while not self.connected:
+            try:
+                print("Reconnecting to the server...")
+                self.run_client(self.server_ip, self.server_port)
+                self.connected = True
+                self.disconnect_time = 0
+                self.counter+=1
+            except Exception as e:
+                print("Error reconnecting to the server: ", e)
+                time.sleep(2)
+
+
+        self.run_client(self.server_ip, self.server_port)
+        self.connected = True
+        self.disconnect_time = 0
+
+
     def send_data(self):
         """
         Converts the Firefighter object to a JSON string.
@@ -119,30 +147,55 @@ class Firefighter:
         Returns:
         - str: The JSON representation of the object.
         """
-        if not f1.tapstrap_shared_queue.empty():
-            gesture = f1.tapstrap_shared_queue.get(block=False)
-            f1.gesture = gesture
-            print(f"Gesture: {gesture}")
-        else:
-            print("gesture queue is empty.")
+        try: 
+            if not self.tapstrap_shared_queue.empty():
+                gesture = self.tapstrap_shared_queue.get(block=False)
+                self.gesture = gesture
+                print(f"Gesture: {gesture}")
+            else:
+                print("gesture queue is empty.")
+            
+            # delete client object
+            # d = {k: v for k, v in d.items() if k != "client"}
+            d = self.__dict__.copy()
+            d.pop("tapstrap_shared_queue")
+            d.pop("client")
+            # d["tapstrap_shared_queue"] = list(self.__dict__["tapstrap_shared_queue"])
+
+            d = json.dumps(d, skipkeys=True, default=str)
+            self.client.sendall(d.encode())
         
-        # delete client object
-        # d = {k: v for k, v in d.items() if k != "client"}
-        d = self.__dict__.copy()
-        d.pop("tapstrap_shared_queue")
-        d.pop("client")
-        # d["tapstrap_shared_queue"] = list(self.__dict__["tapstrap_shared_queue"])
+        except Exception as e:
+            print("Error sending data to server: ", e)
+            self.connected = False
+            self.client.close()
+            self.client = None
+            self.disconnect_time = time.time()
+            self.reconnect()
 
-        d = json.dumps(d, skipkeys=True, default=str)
-        self.client.sendall(d.encode())
+    def recieve_data(self):
+        """
+        Recieves data from the server.
+        """
+        print("recieving data")
+        try:
+            data = self.client.recv(1024).decode()
+            print("Recieved data: ", data)
+        except Exception as e:
+            print("Error recieving data from server: ", e)
+            self.connected = False
+            self.client.close()
+            self.client = None
+            self.disconnect_time = time.time()
+            self.reconnect()
 
-       
+
         # if f1.connected:
             # f1.send_data()
             
         # send data to the server
         # return d
-
+    
     def update_ip(self):
         """
         Retrieves the IP address of the firefighter's device.
@@ -180,8 +233,9 @@ class Firefighter:
             """
             
             # last in first out queue to ensure we always get the most recent prediction
-            loop = asyncio.get_event_loop() # we need this loop to run the tapstrap inference since it uses asyncio
-            threading.Thread(target=tapstrap.realtime_inference.main, args=(True,loop,)).start()
+            self.loop = asyncio.get_event_loop() # we need this loop to run the tapstrap inference since it uses asyncio
+            threading.Thread(target=tapstrap.realtime_inference.main, args=(True,self.loop,)).start()
+            
             self.tapstrap_connected = True
             # threading.Thread(target=tapstrap.realtime_inference.main, args=(True,loop,)).start()
 
@@ -191,7 +245,11 @@ class Firefighter:
             #     gesture = shared_queue.get()
             #     self.gesture = gesture
                 # print("queue value", gesture)
-
+    def handle_tapstrap_vibration(self):
+        """
+        Handles the TapStrap vibration.
+        """
+        # tap_client = TapSDK(None,self.loop)
     def to_json(self):
         """
         Converts the Firefighter object to a JSON string.
@@ -283,8 +341,13 @@ class Firefighter:
 #     firefighter3 = Firefighter(3,"Michael", "Building A, Floor 2" )
 
 
+    def vib(self):
+        # svs()
+        print("vibrating")
+        # self.tapstrap_vibration_queue.put("vibrate")
+        # vibrate_sync([100,100,100])
 
-if __name__ == "__main__":
+def main():
     # connect to the server
     # connect to tap strap 
     # run the realtime_inference.py file 
@@ -297,7 +360,7 @@ if __name__ == "__main__":
     #     print(output_queue.get())
 
     # # Create a firefighter client
-    f1 = Firefighter(1, "John", "Building A, Floor 2")
+    f1 = Firefighter(1, "Macbook", "Building A, Floor 2")
     # f2 = Firefighter(2, "Sarah", "Building B, Floor 32")
     counter = 0
     while not f1.connected:
@@ -336,6 +399,12 @@ if __name__ == "__main__":
         (1,1, f1.send_data), # send data to the server
         (1,1, f1.route_wifi_data),
         (2,1, f1.route_bluetooth_data),
+        # (2,1, f1.vib),
+        (2,1, f1.vib),
+        
+
+        # (2,1, f1.recieve_data),
+
         # (10,1, f1.update_time),
         ]
     # schedule the events
@@ -345,7 +414,8 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
-
+            
+    
     # while True:
     # s.run(blocking=False)
     # time.sleep(100)
@@ -413,3 +483,7 @@ if __name__ == "__main__":
     # f1.tapstrap_inference()
         
         # print("sent data too server")      
+
+
+main()
+# asyncio.run(main())
