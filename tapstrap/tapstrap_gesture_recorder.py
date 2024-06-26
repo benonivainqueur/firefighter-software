@@ -36,7 +36,7 @@ merged_values = []
 global first_iteration
 first_iteration = True
 global base_path
-base_path = 'tapstrap/training_data/new_gestures'
+base_path = 'tapstrap/training_data/gloved_gest' ## 
 
 def OnRawData(identifier, packets):
     if is_recording:
@@ -155,7 +155,7 @@ def record_data():
     #         # label_tuples[folder_name] = 0
     old_gesture_name = ''
     auto_mode = True
-    gesture_name = 'repeat'
+    gesture_name = 'two_finger_point' 
     sample_cutoff = 200
     print("Type 'auto' and your gesture name following it to enable auto mode... 'auto wave' for example")
     while True:

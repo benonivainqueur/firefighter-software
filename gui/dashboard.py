@@ -33,7 +33,6 @@ demo_firefighter_data = [
         "id": 0,
         "wifi_strength": "Excellent",
         "last_updated": "10 Seconds Ago",
-
     },
     {
         "name": "Sarah",
@@ -43,8 +42,6 @@ demo_firefighter_data = [
         "wifi_strength": "Good",
         "last_updated": "100 seconds ago",
 
-        
-
     },
     {
         "name": "Michael",
@@ -53,9 +50,7 @@ demo_firefighter_data = [
         "id": 2,
         "wifi_strength": "Bad",
         "last_updated": "300 Seconds Ago",
-
     }
-
 ]
 
 def center_window(window, width, height):
@@ -79,19 +74,22 @@ class DashboardApp:
         ## SERVER ## 
         # self.server_ip = "127.0.0.1"
         # self.server_ip = "192.168.0.30"
-        self.server_ip = "192.168.8.243"
+        # self.server_ip = "192.168.8.243"
+        self.server_ip ="10.110.85.26"
         #
         self.client_connections={}
         self.client_count = 0
 
         self.server_port = 5555
         self.server= None
-        
+        # Suppress deprecation warning for Tkinter
+
+
         ## DATA QUEUES ## 
         self.root = root
         self.label = ttk.Label(root, text="Hello, Tkinter!")
         self.root.title("Firefighter Dashboard")
-        center_window(self.root, 1200, 800)
+        center_window(self.root, 1200, 900)
         # self.root.geometry("1200x800")
         self.firefighter_data = {}  # Dictionary to store actual firefighter data
         self.view_data = {}         # Dictionary to store view representation data
@@ -672,6 +670,9 @@ class DashboardApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
+    os.environ['TK_SILENCE_DEPRECATION'] = '1'
+
+    # Create a simple Tkinter window
     app = DashboardApp(root)
     # run server in a separate thread
     # app.start_server()

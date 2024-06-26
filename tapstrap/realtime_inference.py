@@ -29,16 +29,27 @@ vibration_queue= queue.Queue()
 queue_size = 10
 shared_queue = queue.LifoQueue() 
 gesture_map = {
-    0: "THUMB TO INDEX",
-    1: "FINGER TO PINKY",
-    2: "FINGER TO INDEX",  
-    3: "DOUBLE TAP",
-    4: "REPEAT",
-    5: "THUMB TO RING",
-    6: "THUMBS DOWN",
-    7: "REGROUP",
-    8: "THUMBS UP",
-    9:"NONE"
+    0: "come_here",
+    1: "ring_tap",
+    2: "two_index_tap",  
+    3: "fist_hand",
+    4: "thumbs_down",
+    5: "thumbs_up",
+    6: "index_tap",
+    7: "two_finger_point",
+    8: "middle_tap",
+    
+
+    # 0: "THUMB TO INDEX",
+    # 1: "FINGER TO PINKY",
+    # 2: "FINGER TO INDEX",  
+    # 3: "DOUBLE TAP",
+    # 4: "REPEAT",
+    # 5: "THUMB TO RING",
+    # 6: "THUMBS DOWN",
+    # 7: "REGROUP",
+    # 8: "THUMBS UP",
+    # 9:"NONE"
 }
 
 # on_linux = False

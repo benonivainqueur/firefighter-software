@@ -70,7 +70,9 @@ class Firefighter:
         self.wifi_network_name = "FirefighterNet"
         # self.ip = socket.gethostbyname(socket.gethostname())
         self.ip = None
-        self.server_ip = "192.168.8.243"
+        # self.server_ip = "192.168.8.243"
+        self.server_ip ="10.110.85.26"
+
         self.server_port = 5555
         self.connected = False
         self.id = id

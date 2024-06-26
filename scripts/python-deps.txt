@@ -9,5 +9,5 @@ seaborn
 joblib
 pywifi
 schedule
-sklearn
+scikit-learn
 asyncio
